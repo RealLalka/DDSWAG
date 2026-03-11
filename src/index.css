@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-bg-dark: #030403;
+  --color-panel: #0d0f0e;
+  --color-panel-hover: #151816;
+  
+  --color-ash-red: #8c4a4a;
+  --color-ash-red-light: #a85c5c;
+  --color-ash-red-dark: #5c3a3a;
+  
+  --color-swamp-green: #526354;
+  --color-swamp-green-light: #6b806e;
+  --color-swamp-green-dark: #2f3e33;
+  
+  --color-text-main: #e0e0e0;
+  --color-text-muted: #8a8f8b;
+  
+  --color-border-line: rgba(255, 255, 255, 0.06);
+}
+
+body {
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-main);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-line);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-swamp-green);
+}
+
+/* Linear style utilities */
+.linear-border {
+  border: 1px solid var(--color-border-line);
+}
+
+.bento-panel {
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border-line);
+  border-radius: 24px;
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bento-panel:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.7);
+  transform: translateY(-2px);
+}
+
+/* Customizing the date/time inputs */
+input[type="date"],
+input[type="month"],
+input[type="week"],
+input[type="time"] {
+  color-scheme: dark;
+  position: relative;
+}
+
+::-webkit-calendar-picker-indicator {
+  background-color: var(--color-swamp-green);
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+
+::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background-color: var(--color-swamp-green-light);
+  transform: scale(1.05);
+}
+
+.hide-arrows::-webkit-inner-spin-button,
+.hide-arrows::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.hide-arrows {
+  -moz-appearance: textfield;
+}
+
+input, select {
+  background-color: rgba(0,0,0,0.2);
+  border: 1px solid var(--color-border-line);
+  color: var(--color-text-main);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: var(--color-swamp-green-light);
+}
+
+.btn-primary {
+  background-color: var(--color-swamp-green);
+  color: #fff;
+  transition: all 0.2s;
+}
+.btn-primary:hover {
+  background-color: var(--color-swamp-green-light);
+}
+
+.btn-danger {
+  background-color: var(--color-ash-red-dark);
+  color: #fff;
+  transition: all 0.2s;
+}
+.btn-danger:hover {
+  background-color: var(--color-ash-red);
+}

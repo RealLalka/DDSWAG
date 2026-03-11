@@ -1,0 +1,728 @@
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { motion, Reorder } from 'motion/react';
+import { DateTime } from 'luxon';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faTrash, faArrowTrendDown, faArrowTrendUp, faWallet, faCalendarDays, faTriangleExclamation, faDownload, faUpload, faPen, faRightFromBracket, faChartPie, faHeartPulse, faFileInvoiceDollar } from '@fortawesome/free-solid-svg-icons';
+import { DevilIcon } from './DevilIcon';
+import { cn } from '../lib/utils';
+import { DebtModal, Debt } from './DebtModal';
+import { BillModal, Bill } from './BillModal';
+import { ExportPreviewModal } from './ExportPreviewModal';
+import { AuthModal } from './AuthModal';
+import { IncomeModal, Income } from './IncomeModal';
+import { CalendarView } from './CalendarView';
+import { CustomDatePicker } from './CustomDatePicker';
+import { CustomNumberInput } from './CustomInputs';
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Area,
+  AreaChart
+} from 'recharts';
+
+export const Dashboard: React.FC = () => {
+  const [user, setUser] = useState<{ id: number; username: string; minBudget: number; calendarStartDate?: string; debtStartDate?: string; } | null>(null);
+  
+  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [debts, setDebts] = useState<Debt[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
+  
+  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
+  const [editingIncome, setEditingIncome] = useState<Income | null>(null);
+
+  const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
+  const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
+
+  const [isBillModalOpen, setIsBillModalOpen] = useState(false);
+  const [editingBill, setEditingBill] = useState<Bill | null>(null);
+  
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar'>('dashboard');
+  const [minBudget, setMinBudget] = useState<number>(15000);
+  const [calendarStartDate, setCalendarStartDate] = useState<string>('');
+  const [debtStartDate, setDebtStartDate] = useState<string>('');
+
+  const fetchData = () => {
+    if (user) {
+      fetch(`/api/incomes?userId=${user.id}`)
+        .then(res => res.json())
+        .then(data => setIncomes(data))
+        .catch(console.error);
+
+      fetch(`/api/debts?userId=${user.id}`)
+        .then(res => res.json())
+        .then(data => setDebts(data))
+        .catch(console.error);
+
+      fetch(`/api/bills?userId=${user.id}`)
+        .then(res => res.json())
+        .then(data => setBills(data))
+        .catch(console.error);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      setMinBudget(user.minBudget || 15000);
+      setCalendarStartDate(user.calendarStartDate || DateTime.now().toISODate() || '');
+      setDebtStartDate(user.debtStartDate || DateTime.now().toISODate() || '');
+      fetchData();
+    }
+  }, [user]);
+
+  const handleSettingsChange = async (field: 'calendarStartDate' | 'debtStartDate', val: string) => {
+    if (field === 'calendarStartDate') setCalendarStartDate(val);
+    if (field === 'debtStartDate') setDebtStartDate(val);
+    
+    if (user) {
+      const updatedUser = { ...user, [field]: val };
+      setUser(updatedUser);
+      await fetch(`/api/users/${user.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          calendarStartDate: field === 'calendarStartDate' ? val : calendarStartDate,
+          debtStartDate: field === 'debtStartDate' ? val : debtStartDate
+        })
+      });
+    }
+  };
+
+  const handleMinBudgetChange = async (val: number) => {
+    setMinBudget(val);
+    if (user) {
+      setUser({ ...user, minBudget: val });
+      await fetch(`/api/users/${user.id}/min-budget`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ minBudget: val })
+      });
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        if (data.incomes) {
+          await Promise.all(data.incomes.map((inc: any) => fetch('/api/incomes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...inc, userId: user.id })
+          })));
+        }
+        if (data.debts) {
+          await Promise.all(data.debts.map((debt: any) => fetch('/api/debts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...debt, userId: user.id })
+          })));
+        }
+        fetchData();
+      } catch (err) {
+        console.error('Import failed', err);
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleExportJSON = () => {
+    const data = {
+      incomes,
+      debts,
+      minBudget
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `finance_backup_${DateTime.now().toFormat('yyyy-MM-dd')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Calculations
+  const totalIncome = useMemo(() => incomes.reduce((sum, item) => sum + item.amount, 0), [incomes]);
+  const totalDebt = useMemo(() => debts.reduce((sum, item) => sum + item.amount, 0), [debts]);
+  const totalBills = useMemo(() => bills.reduce((sum, item) => sum + item.amount, 0), [bills]);
+
+  const calculateMonthlyPaymentForDebt = (debt: Debt, months: number) => {
+    if (debt.type === 'credit_card') {
+      const r = debt.rate / 100 / 12;
+      const requiredPayment = r === 0 ? debt.amount / months : (debt.amount * r) / (1 - Math.pow(1 + r, -months));
+      return Math.max(requiredPayment, debt.mandatoryPayment || 0);
+    } else if (debt.type === 'installment') {
+      return debt.amount / (debt.remainingMonths || 1);
+    } else if (debt.type === 'split') {
+      return debt.amount / months;
+    } else {
+      const r = debt.rate / 100 / 12;
+      if (r === 0) return debt.amount / months;
+      return (debt.amount * r) / (1 - Math.pow(1 + r, -months));
+    }
+  };
+
+  const minMonths = useMemo(() => {
+    for (let m = 1; m <= 120; m++) {
+      const payment = debts.reduce((sum, debt) => sum + calculateMonthlyPaymentForDebt(debt, m), 0);
+      if (totalIncome - payment - totalBills >= minBudget) {
+        return m;
+      }
+    }
+    return 120;
+  }, [debts, totalIncome, minBudget, totalBills]);
+
+  const [targetMonths, setTargetMonths] = useState<number>(24);
+
+  useEffect(() => {
+    if (targetMonths < minMonths) {
+      setTargetMonths(minMonths);
+    }
+  }, [minMonths, targetMonths]);
+
+  const monthlyPayments = useMemo(() => {
+    return debts.map(debt => ({
+      ...debt,
+      monthlyPayment: calculateMonthlyPaymentForDebt(debt, targetMonths)
+    }));
+  }, [debts, targetMonths]);
+
+  const totalMonthlyPayment = useMemo(() => 
+    monthlyPayments.reduce((sum, item) => sum + item.monthlyPayment, 0)
+  , [monthlyPayments]);
+
+  const remainingBudget = totalIncome - totalMonthlyPayment - totalBills;
+  const dti = totalIncome > 0 ? ((totalMonthlyPayment + totalBills) / totalIncome) * 100 : 0;
+
+  // Chart Data
+  const chartData = useMemo(() => {
+    const data = [];
+    let currentTotalDebt = totalDebt;
+    for (let i = 0; i <= targetMonths; i++) {
+      data.push({
+        month: i,
+        debt: Math.max(0, Math.round(currentTotalDebt)),
+      });
+      const principalPaid = totalMonthlyPayment - (currentTotalDebt * (debts.reduce((acc, d) => acc + d.rate, 0) / (debts.length || 1)) / 100 / 12);
+      currentTotalDebt -= principalPaid;
+    }
+    return data;
+  }, [totalDebt, targetMonths, totalMonthlyPayment, debts]);
+
+  // Handlers
+  const handleSaveIncome = async (income: Income) => {
+    if (!user) return;
+    try {
+      if (editingIncome) {
+        await fetch(`/api/incomes/${income.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(income)
+        });
+        setIncomes(incomes.map(i => i.id === income.id ? income : i));
+      } else {
+        await fetch('/api/incomes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...income, userId: user.id })
+        });
+        setIncomes([...incomes, income]);
+      }
+    } catch (err) {
+      console.error('Failed to save income', err);
+    }
+  };
+
+  const removeIncome = async (id: string) => {
+    try {
+      await fetch(`/api/incomes/${id}`, { method: 'DELETE' });
+      setIncomes(incomes.filter(i => i.id !== id));
+    } catch (err) {
+      console.error('Failed to delete income', err);
+    }
+  };
+
+  const openAddIncome = () => {
+    setEditingIncome(null);
+    setIsIncomeModalOpen(true);
+  };
+
+  const openEditIncome = (income: Income) => {
+    setEditingIncome(income);
+    setIsIncomeModalOpen(true);
+  };
+
+  const handleSaveDebt = async (debt: Debt) => {
+    if (!user) return;
+    try {
+      if (editingDebt) {
+        await fetch(`/api/debts/${debt.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(debt)
+        });
+        setDebts(debts.map(d => d.id === debt.id ? debt : d));
+      } else {
+        await fetch('/api/debts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...debt, userId: user.id })
+        });
+        setDebts([...debts, debt]);
+      }
+    } catch (err) {
+      console.error('Failed to save debt', err);
+    }
+  };
+
+  const removeDebt = async (id: string) => {
+    try {
+      await fetch(`/api/debts/${id}`, { method: 'DELETE' });
+      setDebts(debts.filter(d => d.id !== id));
+    } catch (err) {
+      console.error('Failed to delete debt', err);
+    }
+  };
+
+  const openAddDebt = () => {
+    setEditingDebt(null);
+    setIsDebtModalOpen(true);
+  };
+
+  const openEditDebt = (debt: Debt) => {
+    setEditingDebt(debt);
+    setIsDebtModalOpen(true);
+  };
+
+  const handleSaveBill = async (bill: Bill) => {
+    if (!user) return;
+    try {
+      if (editingBill) {
+        await fetch(`/api/bills/${bill.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bill)
+        });
+        setBills(bills.map(b => b.id === bill.id ? bill : b));
+      } else {
+        await fetch('/api/bills', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...bill, userId: user.id })
+        });
+        setBills([...bills, bill]);
+      }
+    } catch (err) {
+      console.error('Failed to save bill', err);
+    }
+  };
+
+  const removeBill = async (id: string) => {
+    try {
+      await fetch(`/api/bills/${id}`, { method: 'DELETE' });
+      setBills(bills.filter(b => b.id !== id));
+    } catch (err) {
+      console.error('Failed to delete bill', err);
+    }
+  };
+
+  const openAddBill = () => {
+    setEditingBill(null);
+    setIsBillModalOpen(true);
+  };
+
+  const openEditBill = (bill: Bill) => {
+    setEditingBill(bill);
+    setIsBillModalOpen(true);
+  };
+
+  const formatCurrency = (val: number) => new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(val);
+
+  if (!user) {
+    return <AuthModal onLogin={setUser} />;
+  }
+
+  return (
+    <div className="min-h-screen p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto flex flex-col">
+      {/* Header */}
+      <header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 pb-6 border-b border-[var(--color-border-line)] gap-4 shrink-0">
+        <div className="flex items-center gap-4 cursor-pointer group">
+          <div className="w-14 h-14 group-hover:scale-105 transition-transform">
+            <DevilIcon className="w-full h-full" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold font-mono tracking-wider text-[var(--color-ash-red-light)] group-hover:text-[var(--color-ash-red)] transition-colors">Должная Душа<span className="text-[var(--color-swamp-green-light)]">.swag</span></h1>
+            <p className="text-xs md:text-sm text-[var(--color-text-muted)] font-mono">Аналитика выживания</p>
+          </div>
+        </div>
+
+        <div className="flex bg-[rgba(0,0,0,0.2)] p-1 rounded-2xl border border-[var(--color-border-line)]">
+          <button 
+            onClick={() => setActiveTab('dashboard')}
+            className={cn("flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium transition-all", activeTab === 'dashboard' ? "bg-[var(--color-panel)] text-white shadow-md" : "text-[var(--color-text-muted)] hover:text-white")}
+          >
+            <FontAwesomeIcon icon={faChartPie} className="w-4 h-4" /> Дашборд
+          </button>
+          <button 
+            onClick={() => setActiveTab('calendar')}
+            className={cn("flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium transition-all", activeTab === 'calendar' ? "bg-[var(--color-panel)] text-white shadow-md" : "text-[var(--color-text-muted)] hover:text-white")}
+          >
+            <FontAwesomeIcon icon={faCalendarDays} className="w-4 h-4" /> Календарь
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="text-sm text-[var(--color-text-muted)] mr-2 hidden md:block">
+            Пользователь: <span className="text-white">{user.username}</span>
+          </div>
+          <button 
+            onClick={() => setUser(null)}
+            className="flex items-center justify-center gap-2 text-sm font-mono bg-[rgba(140,74,74,0.1)] hover:bg-[rgba(140,74,74,0.2)] text-[var(--color-ash-red-light)] px-4 py-3 rounded-2xl border border-[var(--color-ash-red-dark)] transition-colors"
+            title="Выйти"
+          >
+            <FontAwesomeIcon icon={faRightFromBracket} className="w-4 h-4" />
+          </button>
+          
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleImport} 
+            accept=".json" 
+            className="hidden" 
+          />
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center justify-center gap-2 text-sm font-mono bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] px-4 py-3 rounded-2xl linear-border transition-colors"
+            title="Импорт JSON"
+          >
+            <FontAwesomeIcon icon={faUpload} className="w-4 h-4 text-[var(--color-text-muted)]" />
+          </button>
+          
+          <button 
+            onClick={handleExportJSON}
+            className="flex items-center justify-center gap-2 text-sm font-mono bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] px-4 py-3 rounded-2xl linear-border transition-colors"
+            title="Экспорт JSON"
+          >
+            <FontAwesomeIcon icon={faDownload} className="w-4 h-4 text-[var(--color-text-muted)]" />
+            <span className="hidden sm:inline">JSON</span>
+          </button>
+
+          <button 
+            onClick={() => setIsExportModalOpen(true)}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 text-sm font-mono bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] px-4 py-3 rounded-2xl linear-border transition-colors"
+          >
+            <FontAwesomeIcon icon={faDownload} className="w-4 h-4 text-[var(--color-text-muted)]" />
+            <span className="hidden sm:inline">PDF/JPG</span>
+          </button>
+        </div>
+      </header>
+
+      {activeTab === 'calendar' ? (
+        <CalendarView 
+          incomes={incomes} 
+          debts={debts} 
+          bills={bills}
+          calendarStartDate={calendarStartDate}
+          debtStartDate={debtStartDate}
+          targetMonths={targetMonths}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-4 md:gap-6 flex-1">
+          {/* Summary Cards */}
+          <div className="col-span-1 md:col-span-6 lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-6">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bento-panel p-8 rounded-[2rem] flex flex-col justify-between bg-[var(--color-swamp-green-dark)] border-[var(--color-swamp-green)] relative overflow-hidden group shadow-lg min-h-[160px]">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full blur-3xl group-hover:opacity-10 transition-opacity" />
+              <span className="text-sm text-[var(--color-swamp-green-light)] flex items-center gap-2 uppercase tracking-wider relative z-10"><FontAwesomeIcon icon={faWallet} className="w-4 h-4"/> Доход</span>
+              <span className="text-3xl md:text-4xl font-mono text-white truncate relative z-10 mt-2">{formatCurrency(totalIncome)}</span>
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bento-panel p-8 rounded-[2rem] flex flex-col justify-between bg-[var(--color-ash-red-dark)] border-[var(--color-ash-red)] relative overflow-hidden group shadow-lg min-h-[160px]">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full blur-3xl group-hover:opacity-10 transition-opacity" />
+              <span className="text-sm text-[var(--color-ash-red-light)] flex items-center gap-2 uppercase tracking-wider relative z-10"><FontAwesomeIcon icon={faArrowTrendDown} className="w-4 h-4"/> Долг</span>
+              <span className="text-3xl md:text-4xl font-mono text-white truncate relative z-10 mt-2">{formatCurrency(totalDebt)}</span>
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bento-panel p-8 rounded-[2rem] flex flex-col justify-between bg-[rgba(140,74,74,0.3)] border-[var(--color-ash-red-dark)] relative overflow-hidden group shadow-lg min-h-[160px]">
+              <span className="text-sm text-[var(--color-ash-red-light)] flex items-center gap-2 uppercase tracking-wider"><FontAwesomeIcon icon={faArrowTrendUp} className="w-4 h-4"/> Платёж</span>
+              <span className="text-3xl md:text-4xl font-mono text-white truncate mt-2">{formatCurrency(totalMonthlyPayment)}</span>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.21 }} className="bento-panel p-8 rounded-[2rem] flex flex-col justify-between bg-[rgba(140,100,74,0.3)] border-[var(--color-border-line)] relative overflow-hidden group shadow-lg min-h-[160px]">
+              <span className="text-sm text-yellow-400/80 flex items-center gap-2 uppercase tracking-wider"><FontAwesomeIcon icon={faFileInvoiceDollar} className="w-4 h-4"/> Обязательные</span>
+              <span className="text-3xl md:text-4xl font-mono text-white truncate mt-2">{formatCurrency(totalBills)}</span>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="bento-panel p-8 rounded-[2rem] flex flex-col justify-between bg-[rgba(0,0,0,0.2)] border-[var(--color-border-line)] relative overflow-hidden group shadow-lg min-h-[160px]">
+              <span className="text-sm text-[var(--color-text-muted)] flex items-center gap-2 uppercase tracking-wider"><FontAwesomeIcon icon={faHeartPulse} className="w-4 h-4"/> DTI (Нагрузка)</span>
+              <span className={cn("text-3xl md:text-4xl font-mono truncate mt-2", dti > 50 ? "text-[var(--color-ash-red-light)]" : dti > 30 ? "text-yellow-400" : "text-[var(--color-swamp-green-light)]")}>{dti.toFixed(1)}%</span>
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className={cn("bento-panel p-8 rounded-[2rem] flex flex-col justify-between relative overflow-hidden shadow-lg min-h-[160px]", remainingBudget >= minBudget ? "bg-[var(--color-swamp-green)] border-[var(--color-swamp-green-light)]" : "bg-[var(--color-ash-red)] border-[var(--color-ash-red-light)]")}>
+              <div className="absolute -bottom-10 -right-10 w-48 h-48 rounded-full blur-3xl opacity-20 bg-white" />
+              <span className="text-sm text-white/80 flex items-center gap-2 uppercase tracking-wider relative z-10">Остаток <FontAwesomeIcon icon={faTriangleExclamation} className="w-4 h-4 text-white/90"/></span>
+              <span className="text-4xl md:text-5xl font-mono font-bold text-white truncate relative z-10 mt-2">
+                {formatCurrency(remainingBudget)}
+              </span>
+            </motion.div>
+          </div>
+
+          {/* Left Column: Settings & Incomes */}
+          <div className="col-span-1 md:col-span-3 lg:col-span-4 flex flex-col gap-4 md:gap-6">
+            
+            {/* Settings Panel */}
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="bento-panel p-6 rounded-3xl">
+              <h2 className="text-lg font-medium mb-6 flex items-center gap-2"><FontAwesomeIcon icon={faCalendarDays} className="w-5 h-5 text-[var(--color-swamp-green-light)]"/> Горизонт планирования</h2>
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-3">
+                  <label className="text-sm text-[var(--color-text-muted)]">За сколько месяцев хотите закрыть долги?</label>
+                  <div className="flex items-center gap-4 bg-[rgba(0,0,0,0.2)] p-4 rounded-2xl linear-border">
+                    <input 
+                      type="range" 
+                      min={minMonths} max="120" 
+                      value={targetMonths} 
+                      onChange={(e) => setTargetMonths(Number(e.target.value))}
+                      className="w-full accent-[var(--color-swamp-green)]"
+                    />
+                    <span className="font-mono text-2xl w-16 text-right text-[var(--color-swamp-green-light)]">{targetMonths}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <label className="text-sm text-[var(--color-text-muted)]">Минимальный остаток на жизнь (₽)</label>
+                  <CustomNumberInput 
+                    value={minBudget.toString()} 
+                    onChange={(val) => handleMinBudgetChange(Number(val))}
+                    className="text-xl text-[var(--color-swamp-green-light)]"
+                    step={1000}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs text-[var(--color-text-muted)]">Начало отсчёта (календарь)</label>
+                    <CustomDatePicker 
+                      value={calendarStartDate} 
+                      onChange={(val) => handleSettingsChange('calendarStartDate', val)}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs text-[var(--color-text-muted)]">Начало отсчёта (долги)</label>
+                    <CustomDatePicker 
+                      value={debtStartDate} 
+                      onChange={(val) => handleSettingsChange('debtStartDate', val)}
+                    />
+                  </div>
+                </div>
+
+                {minMonths > 1 && (
+                  <p className="text-xs text-[var(--color-text-muted)] flex items-center gap-1">
+                    <FontAwesomeIcon icon={faTriangleExclamation} className="w-3 h-3 text-yellow-600/70" />
+                    Минимум {minMonths} мес. для сохранения остатка от {formatCurrency(minBudget)}
+                  </p>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Income Panel */}
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="bento-panel p-6 rounded-3xl flex-1 flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-medium flex items-center gap-2"><FontAwesomeIcon icon={faWallet} className="w-5 h-5 text-[var(--color-swamp-green-light)]"/> Источники дохода</h2>
+                <button onClick={openAddIncome} className="btn-primary p-2 rounded-xl flex items-center gap-2 text-sm px-4">
+                  <FontAwesomeIcon icon={faPlus} className="w-4 h-4" /> <span className="hidden sm:inline">Добавить</span>
+                </button>
+              </div>
+              
+              <Reorder.Group axis="y" values={incomes} onReorder={setIncomes} className="space-y-3 flex-1 overflow-y-auto pr-2">
+                {incomes.map(income => (
+                  <Reorder.Item key={income.id} value={income} className="flex items-center justify-between p-4 rounded-2xl bg-[rgba(0,0,0,0.2)] linear-border group hover:border-[var(--color-swamp-green-dark)] transition-colors cursor-grab active:cursor-grabbing">
+                    <span className="font-medium">{income.name}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="font-mono text-[var(--color-swamp-green-light)]">{formatCurrency(income.amount)}</span>
+                      <button onClick={() => openEditIncome(income)} className="text-[var(--color-text-muted)] hover:text-white transition-colors md:opacity-0 group-hover:opacity-100 p-1">
+                        <FontAwesomeIcon icon={faPen} className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => removeIncome(income.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-ash-red)] transition-colors md:opacity-0 group-hover:opacity-100 p-1">
+                        <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </Reorder.Item>
+                ))}
+                {incomes.length === 0 && (
+                  <div className="text-center text-[var(--color-text-muted)] p-6 border border-dashed border-[var(--color-border-line)] rounded-2xl">
+                    Нет добавленных доходов
+                  </div>
+                )}
+              </Reorder.Group>
+            </motion.div>
+
+            {/* Bills Panel */}
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }} className="bento-panel p-6 rounded-3xl flex-1 flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-medium flex items-center gap-2"><FontAwesomeIcon icon={faFileInvoiceDollar} className="w-5 h-5 text-yellow-400/80"/> Обязательные платежи</h2>
+                <button onClick={openAddBill} className="btn-primary p-2 rounded-xl flex items-center gap-2 text-sm px-4">
+                  <FontAwesomeIcon icon={faPlus} className="w-4 h-4" /> <span className="hidden sm:inline">Добавить</span>
+                </button>
+              </div>
+              
+              <Reorder.Group axis="y" values={bills} onReorder={setBills} className="space-y-3 flex-1 overflow-y-auto pr-2">
+                {bills.map(bill => (
+                  <Reorder.Item key={bill.id} value={bill} className="flex items-center justify-between p-4 rounded-2xl bg-[rgba(0,0,0,0.2)] linear-border group hover:border-yellow-600/30 transition-colors cursor-grab active:cursor-grabbing">
+                    <div className="flex flex-col">
+                      <span className="font-medium">{bill.name}</span>
+                      <span className="text-[10px] text-[var(--color-text-muted)]">День: {bill.dueDate}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="font-mono text-yellow-400/80">{formatCurrency(bill.amount)}</span>
+                      <button onClick={() => openEditBill(bill)} className="text-[var(--color-text-muted)] hover:text-white transition-colors md:opacity-0 group-hover:opacity-100 p-1">
+                        <FontAwesomeIcon icon={faPen} className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => removeBill(bill.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-ash-red)] transition-colors md:opacity-0 group-hover:opacity-100 p-1">
+                        <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </Reorder.Item>
+                ))}
+                {bills.length === 0 && (
+                  <div className="text-center text-[var(--color-text-muted)] p-6 border border-dashed border-[var(--color-border-line)] rounded-2xl">
+                    Нет обязательных платежей
+                  </div>
+                )}
+              </Reorder.Group>
+            </motion.div>
+          </div>
+
+          {/* Middle Column: Debts */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="col-span-1 md:col-span-3 lg:col-span-8 flex flex-col gap-4 md:gap-6">
+            
+            <div className="bento-panel p-6 rounded-3xl flex-1 flex flex-col min-h-[400px]">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-medium flex items-center gap-2"><FontAwesomeIcon icon={faArrowTrendDown} className="w-5 h-5 text-[var(--color-ash-red-light)]"/> Долговая яма</h2>
+                <button onClick={openAddDebt} className="btn-danger p-2 rounded-xl flex items-center gap-2 text-sm px-4">
+                  <FontAwesomeIcon icon={faPlus} className="w-4 h-4" /> <span className="hidden sm:inline">Добавить</span>
+                </button>
+              </div>
+              
+              <Reorder.Group axis="y" values={debts} onReorder={setDebts} className="flex flex-col gap-4 flex-1 overflow-y-auto pr-2 content-start">
+                {debts.map(debt => {
+                  const monthlyPayment = monthlyPayments.find(mp => mp.id === debt.id)?.monthlyPayment || 0;
+                  return (
+                  <Reorder.Item key={debt.id} value={debt} className="p-5 rounded-2xl bg-[rgba(0,0,0,0.2)] linear-border relative group hover:border-[var(--color-ash-red-dark)] transition-colors flex flex-col cursor-grab active:cursor-grabbing">
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <button onClick={() => openEditDebt(debt)} className="text-[var(--color-text-muted)] hover:text-white transition-colors md:opacity-0 group-hover:opacity-100 p-1 bg-[var(--color-panel)] rounded-md">
+                        <FontAwesomeIcon icon={faPen} className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => removeDebt(debt.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-ash-red)] transition-colors md:opacity-0 group-hover:opacity-100 p-1 bg-[var(--color-panel)] rounded-md">
+                        <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    <div className="pr-16 mb-4">
+                      <h3 className="font-medium text-lg truncate">{debt.name}</h3>
+                      <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] bg-[var(--color-panel)] px-2 py-1 rounded-md mt-2 inline-block">
+                        {debt.type === 'credit_card' ? 'Кредитная карта' : debt.type === 'installment' ? 'Рассрочка' : debt.type === 'loan' ? 'Займ' : debt.type === 'split' ? 'Сплит' : 'Кредит'}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-end mt-auto">
+                      <div>
+                        <p className="text-xs text-[var(--color-text-muted)] mb-1">Остаток</p>
+                        <p className="font-mono text-xl">{formatCurrency(debt.amount)}</p>
+                      </div>
+                      {debt.type !== 'installment' && debt.type !== 'split' && (
+                        <div className="text-right">
+                          <p className="text-xs text-[var(--color-text-muted)] mb-1">Ставка</p>
+                          <p className="font-mono text-[var(--color-ash-red-light)]">{debt.rate}%</p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t border-[var(--color-border-line)] flex justify-between items-center bg-[rgba(0,0,0,0.1)] -mx-5 -mb-5 px-5 py-4 rounded-b-2xl">
+                      <span className="text-xs text-[var(--color-text-muted)]">Платёж ({debt.type === 'installment' ? debt.remainingMonths : debt.type === 'split' ? 'в мес.' : targetMonths + ' мес.'})</span>
+                      <span className="font-mono font-medium text-[var(--color-ash-red)]">{formatCurrency(monthlyPayment)}</span>
+                    </div>
+                  </Reorder.Item>
+                )})}
+                {debts.length === 0 && (
+                  <div className="text-center text-[var(--color-text-muted)] p-6 border border-dashed border-[var(--color-border-line)] rounded-2xl">
+                    Нет добавленных долгов
+                  </div>
+                )}
+              </Reorder.Group>
+            </div>
+
+            {/* Bottom Chart */}
+            <div className="bento-panel p-6 rounded-3xl h-64 lg:h-80">
+              <h2 className="text-sm font-medium mb-4 flex items-center gap-2 text-[var(--color-text-muted)] uppercase tracking-wider">Проекция сжигания долга</h2>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorDebt" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-ash-red-light)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="var(--color-ash-red-dark)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-line)" vertical={false} />
+                  <XAxis dataKey="month" stroke="var(--color-text-muted)" tick={{fill: 'var(--color-text-muted)', fontSize: 10}} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--color-text-muted)" tick={{fill: 'var(--color-text-muted)', fontSize: 10}} tickLine={false} axisLine={false} tickFormatter={(value) => `${value / 1000}k`} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: 'var(--color-panel)', borderColor: 'var(--color-border-line)', borderRadius: '12px', color: 'var(--color-text-main)', padding: '12px' }}
+                    itemStyle={{ color: 'var(--color-ash-red-light)', fontWeight: 'bold' }}
+                    formatter={(value: number) => [formatCurrency(value), 'Остаток долга']}
+                    labelFormatter={(label) => `Месяц ${label}`}
+                  />
+                  <Area type="monotone" dataKey="debt" stroke="var(--color-ash-red-light)" strokeWidth={3} fillOpacity={1} fill="url(#colorDebt)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+          </motion.div>
+        </div>
+      )}
+
+      <IncomeModal
+        isOpen={isIncomeModalOpen}
+        onClose={() => setIsIncomeModalOpen(false)}
+        onSave={handleSaveIncome}
+        editingIncome={editingIncome}
+      />
+
+      <DebtModal 
+        isOpen={isDebtModalOpen} 
+        onClose={() => setIsDebtModalOpen(false)} 
+        onSave={handleSaveDebt}
+        editingDebt={editingDebt}
+      />
+
+      <BillModal 
+        isOpen={isBillModalOpen} 
+        onClose={() => setIsBillModalOpen(false)} 
+        onSave={handleSaveBill}
+        editingBill={editingBill}
+      />
+
+      <ExportPreviewModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        incomes={incomes}
+        debts={debts}
+        targetMonths={targetMonths}
+        totalIncome={totalIncome}
+        totalDebt={totalDebt}
+        totalMonthlyPayment={totalMonthlyPayment}
+        remainingBudget={remainingBudget}
+      />
+    </div>
+  );
+};
+
