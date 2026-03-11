@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
-import { CustomNumberInput } from './CustomInputs';
+import { CustomNumberInput, CustomInput } from './CustomInputs';
 
 export interface Bill {
   id: string;
@@ -77,11 +77,10 @@ export const BillModal: React.FC<BillModalProps> = ({ isOpen, onClose, onSave, e
           <div className="space-y-4">
             <div>
               <label className="block text-sm text-[var(--color-text-muted)] mb-1">Название (например, Коммуналка)</label>
-              <input 
+              <CustomInput 
                 type="text" 
                 value={name} 
                 onChange={(e) => setName(e.target.value)} 
-                className="w-full bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] rounded-xl p-3 text-white focus:outline-none focus:border-[var(--color-swamp-green-light)] transition-colors"
                 placeholder="ЖКХ"
               />
             </div>

@@ -354,7 +354,7 @@ export const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto flex flex-col">
+    <div className="min-h-screen p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto flex flex-col pb-24 md:pb-8">
       {/* Header */}
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 pb-6 border-b border-[var(--color-border-line)] gap-4 shrink-0">
         <div className="flex items-center gap-4 cursor-pointer group">
@@ -367,7 +367,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex bg-[rgba(0,0,0,0.2)] p-1 rounded-2xl border border-[var(--color-border-line)]">
+        <div className="hidden md:flex bg-[rgba(0,0,0,0.2)] p-1 rounded-2xl border border-[var(--color-border-line)]">
           <button 
             onClick={() => setActiveTab('dashboard')}
             className={cn("flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium transition-all", activeTab === 'dashboard' ? "bg-[var(--color-panel)] text-white shadow-md" : "text-[var(--color-text-muted)] hover:text-white")}
@@ -382,13 +382,13 @@ export const Dashboard: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="text-sm text-[var(--color-text-muted)] mr-2 hidden md:block">
+        <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto hide-scrollbar pb-2 md:pb-0">
+          <div className="text-sm text-[var(--color-text-muted)] mr-2 hidden md:block shrink-0">
             Пользователь: <span className="text-white">{user.username}</span>
           </div>
           <button 
             onClick={() => setUser(null)}
-            className="flex items-center justify-center gap-2 text-sm font-mono bg-[rgba(140,74,74,0.1)] hover:bg-[rgba(140,74,74,0.2)] text-[var(--color-ash-red-light)] px-4 py-3 rounded-2xl border border-[var(--color-ash-red-dark)] transition-colors"
+            className="flex items-center justify-center gap-2 text-sm font-mono bg-[rgba(140,74,74,0.1)] hover:bg-[rgba(140,74,74,0.2)] text-[var(--color-ash-red-light)] px-4 py-3 rounded-2xl border border-[var(--color-ash-red-dark)] transition-colors shrink-0"
             title="Выйти"
           >
             <FontAwesomeIcon icon={faRightFromBracket} className="w-4 h-4" />
@@ -403,7 +403,7 @@ export const Dashboard: React.FC = () => {
           />
           <button 
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center justify-center gap-2 text-sm font-mono bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] px-4 py-3 rounded-2xl linear-border transition-colors"
+            className="flex items-center justify-center gap-2 text-sm font-mono bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] px-4 py-3 rounded-2xl linear-border transition-colors shrink-0"
             title="Импорт JSON"
           >
             <FontAwesomeIcon icon={faUpload} className="w-4 h-4 text-[var(--color-text-muted)]" />
@@ -411,7 +411,7 @@ export const Dashboard: React.FC = () => {
           
           <button 
             onClick={handleExportJSON}
-            className="flex items-center justify-center gap-2 text-sm font-mono bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] px-4 py-3 rounded-2xl linear-border transition-colors"
+            className="flex items-center justify-center gap-2 text-sm font-mono bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] px-4 py-3 rounded-2xl linear-border transition-colors shrink-0"
             title="Экспорт JSON"
           >
             <FontAwesomeIcon icon={faDownload} className="w-4 h-4 text-[var(--color-text-muted)]" />
@@ -420,7 +420,7 @@ export const Dashboard: React.FC = () => {
 
           <button 
             onClick={() => setIsExportModalOpen(true)}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 text-sm font-mono bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] px-4 py-3 rounded-2xl linear-border transition-colors"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 text-sm font-mono bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] px-4 py-3 rounded-2xl linear-border transition-colors shrink-0"
           >
             <FontAwesomeIcon icon={faDownload} className="w-4 h-4 text-[var(--color-text-muted)]" />
             <span className="hidden sm:inline">PDF/JPG</span>
@@ -722,6 +722,26 @@ export const Dashboard: React.FC = () => {
         totalMonthlyPayment={totalMonthlyPayment}
         remainingBudget={remainingBudget}
       />
+
+      {/* Mobile Navigation Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[var(--color-panel)] border-t border-[var(--color-border-line)] z-50 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
+        <div className="flex justify-around items-center p-2">
+          <button 
+            onClick={() => setActiveTab('dashboard')}
+            className={cn("flex flex-col items-center gap-1 p-2 rounded-xl transition-colors flex-1", activeTab === 'dashboard' ? "text-[var(--color-swamp-green-light)]" : "text-[var(--color-text-muted)] hover:text-white")}
+          >
+            <FontAwesomeIcon icon={faChartPie} className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Дашборд</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('calendar')}
+            className={cn("flex flex-col items-center gap-1 p-2 rounded-xl transition-colors flex-1", activeTab === 'calendar' ? "text-[var(--color-swamp-green-light)]" : "text-[var(--color-text-muted)] hover:text-white")}
+          >
+            <FontAwesomeIcon icon={faCalendarDays} className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Календарь</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

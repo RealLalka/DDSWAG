@@ -128,3 +128,9 @@ input:focus, select:focus {
 .btn-danger:hover {
   background-color: var(--color-ash-red);
 }
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

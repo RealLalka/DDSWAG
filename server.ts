@@ -1,7 +1,7 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import bcrypt from 'bcrypt';
-import db from './src/lib/db.js';
+import db from './src/lib/db.ts';
 
 async function startServer() {
   const app = express();

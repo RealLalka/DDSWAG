@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import { motion, AnimatePresence } from 'motion/react';
+import { useFloating, offset, flip, shift, autoUpdate, useInteractions, useClick, useDismiss, useRole, FloatingPortal, FloatingFocusManager } from '@floating-ui/react';
 import { cn } from '../lib/utils';
 
 interface Option {
@@ -18,53 +19,65 @@ interface CustomSelectProps {
 
 export const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, options, className }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  
+  const { refs, floatingStyles, context } = useFloating({
+    open: isOpen,
+    onOpenChange: setIsOpen,
+    placement: 'bottom-start',
+    whileElementsMounted: autoUpdate,
+    middleware: [offset(4), flip(), shift({ padding: 8 })],
+  });
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const click = useClick(context);
+  const dismiss = useDismiss(context);
+  const role = useRole(context, { role: 'listbox' });
+
+  const { getReferenceProps, getFloatingProps } = useInteractions([
+    click,
+    dismiss,
+    role,
+  ]);
 
   const selectedOption = options.find(o => o.value === value);
 
   return (
-    <div className={cn("relative", className)} ref={ref}>
+    <>
       <div 
-        className="w-full p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] flex justify-between items-center cursor-pointer hover:border-[var(--color-swamp-green-light)] transition-colors focus:outline-none focus:border-[var(--color-swamp-green-light)]"
-        onClick={() => setIsOpen(!isOpen)}
+        ref={refs.setReference}
+        {...getReferenceProps()}
+        className={cn("w-full p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] flex justify-between items-center cursor-pointer hover:border-[var(--color-swamp-green-light)] transition-colors focus:outline-none focus:border-[var(--color-swamp-green-light)]", className)}
         tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setIsOpen(!isOpen);
-          }
-        }}
       >
         <span className="text-sm">{selectedOption?.label || 'Выберите...'}</span>
         <FontAwesomeIcon icon={faChevronDown} className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")} />
       </div>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-xl overflow-hidden z-50 shadow-xl"
-          >
-            {options.map(opt => (
-              <div 
-                key={opt.value}
-                className={cn("p-3 text-sm cursor-pointer hover:bg-[rgba(255,255,255,0.05)] transition-colors", value === opt.value && "bg-[var(--color-swamp-green-dark)] text-white")}
-                onClick={() => { onChange(opt.value); setIsOpen(false); }}
-              >
-                {opt.label}
+      
+      <FloatingPortal>
+        <AnimatePresence>
+          {isOpen && (
+            <FloatingFocusManager context={context} modal={false}>
+              <div ref={refs.setFloating} style={{ ...floatingStyles, zIndex: 9999 }}>
+                <motion.div 
+                  {...getFloatingProps()}
+                  initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }}
+                  className="bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-xl overflow-hidden shadow-xl min-w-[max-content]"
+                >
+                  {options.map(opt => (
+                    <div 
+                      key={opt.value}
+                      className={cn("p-3 text-sm cursor-pointer hover:bg-[rgba(255,255,255,0.05)] transition-colors", value === opt.value && "bg-[var(--color-swamp-green-dark)] text-white")}
+                      onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                    >
+                      {opt.label}
+                    </div>
+                  ))}
+                </motion.div>
               </div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            </FloatingFocusManager>
+          )}
+        </AnimatePresence>
+      </FloatingPortal>
+    </>
   );
 };
 
@@ -114,3 +127,35 @@ export const CustomNumberInput: React.FC<CustomNumberInputProps> = ({ value, onC
     </div>
   );
 };
+
+export const CustomInput = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
+  ({ className, ...props }, ref) => {
+    return (
+      <input
+        ref={ref}
+        className={cn(
+          "w-full p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] text-sm focus:outline-none hover:border-[var(--color-swamp-green-light)] focus:border-[var(--color-swamp-green-light)] transition-colors",
+          className
+        )}
+        {...props}
+      />
+    );
+  }
+);
+CustomInput.displayName = 'CustomInput';
+
+export const CustomTextArea = React.forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
+  ({ className, ...props }, ref) => {
+    return (
+      <textarea
+        ref={ref}
+        className={cn(
+          "w-full p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] text-sm focus:outline-none hover:border-[var(--color-swamp-green-light)] focus:border-[var(--color-swamp-green-light)] transition-colors resize-none",
+          className
+        )}
+        {...props}
+      />
+    );
+  }
+);
+CustomTextArea.displayName = 'CustomTextArea';

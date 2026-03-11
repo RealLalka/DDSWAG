@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRightToBracket, faUserPlus, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { DevilIcon } from './DevilIcon';
+import { CustomInput } from './CustomInputs';
 
 interface AuthModalProps {
   onLogin: (user: { id: number; username: string }) => void;
@@ -76,22 +77,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
 
           <div className="flex flex-col gap-2">
             <label className="text-sm text-[var(--color-text-muted)] ml-1">Имя пользователя</label>
-            <input
+            <CustomInput
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] hover:border-[var(--color-swamp-green-light)] focus:border-[var(--color-swamp-green-light)] outline-none transition-colors"
               placeholder="Введите логин"
             />
           </div>
 
           <div className="flex flex-col gap-2">
             <label className="text-sm text-[var(--color-text-muted)] ml-1">Пароль</label>
-            <input
+            <CustomInput
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] hover:border-[var(--color-swamp-green-light)] focus:border-[var(--color-swamp-green-light)] outline-none transition-colors"
               placeholder="Введите пароль"
             />
           </div>

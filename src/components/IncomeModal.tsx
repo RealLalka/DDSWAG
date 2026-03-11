@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faWallet, faPlus, faTrash, faCalendarDays } from '@fortawesome/free-solid-svg-icons';
 import { CustomDayPicker } from './CustomDayPicker';
-import { CustomNumberInput } from './CustomInputs';
+import { CustomNumberInput, CustomInput } from './CustomInputs';
 import { cn } from '../lib/utils';
 
 export interface IncomePayment {
@@ -123,11 +123,10 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSav
           <div className="flex flex-col gap-5 relative z-10 overflow-y-auto custom-scrollbar pr-2 pb-2">
             <div className="flex flex-col gap-2">
               <label className="text-sm text-[var(--color-text-muted)] ml-1">Название источника</label>
-              <input 
+              <CustomInput 
                 type="text" 
                 value={name} 
                 onChange={e => setName(e.target.value)}
-                className="w-full p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] hover:border-[var(--color-swamp-green-light)] focus:border-[var(--color-swamp-green-light)] outline-none transition-colors"
                 placeholder="Зарплата, подработка..."
                 autoFocus
               />
@@ -146,11 +145,11 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSav
                   <div key={payment.id} className="flex flex-col gap-2 p-3 rounded-xl border border-[var(--color-border-line)] bg-[rgba(0,0,0,0.1)]">
                     <div className="flex gap-2 items-start">
                       <div className="flex-1 flex flex-col gap-1">
-                        <input 
+                        <CustomInput 
                           type="text" 
                           value={payment.label} 
                           onChange={e => handleUpdatePayment(payment.id, 'label', e.target.value)}
-                          className="w-full p-2 text-sm rounded-lg bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] hover:border-[var(--color-swamp-green-light)] focus:border-[var(--color-swamp-green-light)] outline-none transition-colors"
+                          className="p-2"
                           placeholder="Подпись (Аванс, ЗП...)"
                         />
                         <div className="flex gap-2">

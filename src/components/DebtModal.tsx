@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { cn } from '../lib/utils';
 import { DateTime } from 'luxon';
-import { CustomSelect, CustomNumberInput } from './CustomInputs';
+import { CustomSelect, CustomNumberInput, CustomInput } from './CustomInputs';
 import { CustomDatePicker } from './CustomDatePicker';
 import { CustomDayPicker } from './CustomDayPicker';
 
@@ -231,13 +231,12 @@ export const DebtModal: React.FC<DebtModalProps> = ({ isOpen, onClose, onSave, e
 
             <div>
               <label className="block text-sm text-[var(--color-text-muted)] mb-1">Название</label>
-              <input 
+              <CustomInput 
                 type="text" 
                 value={name} 
                 onChange={e => setName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSave()}
                 placeholder="Например: Ипотека Сбербанк"
-                className="w-full p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] hover:border-[var(--color-swamp-green-light)] focus:border-[var(--color-swamp-green-light)] outline-none transition-colors text-sm"
               />
             </div>
 
