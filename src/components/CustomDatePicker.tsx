@@ -70,7 +70,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
       <div 
         ref={refs.setReference}
         {...getReferenceProps()}
-        className={cn("flex items-center justify-between p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] cursor-pointer hover:border-[var(--color-swamp-green-light)] transition-colors", className)}
+        className={cn("input-base flex items-center justify-between cursor-pointer", className)}
         tabIndex={0}
       >
         <span className="text-sm font-mono text-[var(--color-text-main)]">

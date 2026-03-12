@@ -35,9 +35,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ incomes, debts, bill
       start = currentDate.startOf('day');
       end = currentDate.endOf('day');
     } else {
-      // For schedule view, we might just want to show the current month's days that have events
-      start = currentDate.startOf('month');
-      end = currentDate.endOf('month');
+      // For schedule view, show from today up to targetMonths
+      start = DateTime.now().startOf('day');
+      end = start.plus({ months: targetMonths }).endOf('month');
     }
 
     const days = [];
@@ -83,7 +83,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ incomes, debts, bill
   const renderScheduleView = () => {
     const scheduleItems: { date: DateTime; items: any[] }[] = [];
 
-    days.forEach(d => {
+    for (const d of days) {
+      if (scheduleItems.length >= 200) break; // Limit to 200 days with events to prevent lag
+
       const dStart = d.startOf('day');
       const items: any[] = [];
 
@@ -146,12 +148,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ incomes, debts, bill
       if (items.length > 0) {
         scheduleItems.push({ date: d, items });
       }
-    });
+    }
 
     if (scheduleItems.length === 0) {
       return (
         <div className="flex-1 flex items-center justify-center text-[var(--color-text-muted)]">
-          Нет событий в этом месяце
+          Нет событий
         </div>
       );
     }
@@ -165,6 +167,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ incomes, debts, bill
               <span className={cn("text-2xl font-light", group.date.hasSame(DateTime.now(), 'day') ? "text-[var(--color-swamp-green-light)] font-medium bg-[rgba(82,99,84,0.2)] w-10 h-10 rounded-full flex items-center justify-center" : "text-[var(--color-text-main)]")}>
                 {group.date.toFormat('d')}
               </span>
+              <span className="text-xs text-[var(--color-text-muted)] mt-1">{group.date.toFormat('MMM', { locale: 'ru' })}</span>
             </div>
             <div className="flex-1 space-y-2 pt-1">
               {group.items.map((item, idx) => (
@@ -192,11 +195,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ incomes, debts, bill
     <motion.div 
       initial={{ opacity: 0, y: 20 }} 
       animate={{ opacity: 1, y: 0 }} 
-      className="bento-panel p-4 md:p-8 rounded-3xl flex-1 flex flex-col min-h-[600px]"
+      className="bento-panel p-2 md:p-4 rounded-3xl flex-1 flex flex-col min-h-[600px]"
     >
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4 px-2 md:px-0">
         <h2 className="text-xl md:text-2xl font-medium font-mono text-[var(--color-swamp-green-light)] capitalize">
-          {(viewMode === 'month' || viewMode === 'schedule') && currentDate.toFormat('LLLL yyyy', { locale: 'ru' })}
+          {viewMode === 'month' && currentDate.toFormat('LLLL yyyy', { locale: 'ru' })}
+          {viewMode === 'schedule' && 'Всё время'}
           {viewMode === 'week' && `Неделя ${currentDate.startOf('week').toFormat('d MMM')} - ${currentDate.endOf('week').toFormat('d MMM yyyy', { locale: 'ru' })}`}
           {viewMode === 'day' && currentDate.toFormat('d LLLL yyyy', { locale: 'ru' })}
         </h2>
@@ -217,21 +221,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ incomes, debts, bill
             </button>
           </div>
 
-          <div className="flex gap-2 shrink-0">
-            <button onClick={prev} className="p-2 bg-[rgba(0,0,0,0.2)] hover:bg-[rgba(0,0,0,0.4)] rounded-xl transition-colors">
-              <FontAwesomeIcon icon={faChevronLeft} className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
-            <button onClick={next} className="p-2 bg-[rgba(0,0,0,0.2)] hover:bg-[rgba(0,0,0,0.4)] rounded-xl transition-colors">
-              <FontAwesomeIcon icon={faChevronRight} className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
-          </div>
+          {viewMode !== 'schedule' && (
+            <div className="flex gap-2 shrink-0">
+              <button onClick={prev} className="p-2 bg-[rgba(0,0,0,0.2)] hover:bg-[rgba(0,0,0,0.4)] rounded-xl transition-colors">
+                <FontAwesomeIcon icon={faChevronLeft} className="w-4 h-4 md:w-5 md:h-5" />
+              </button>
+              <button onClick={next} className="p-2 bg-[rgba(0,0,0,0.2)] hover:bg-[rgba(0,0,0,0.4)] rounded-xl transition-colors">
+                <FontAwesomeIcon icon={faChevronRight} className="w-4 h-4 md:w-5 md:h-5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {viewMode === 'schedule' ? renderScheduleView() : (
-        <div className={cn("grid gap-2 md:gap-4 flex-1", viewMode === 'day' ? "grid-cols-1" : "grid-cols-7")}>
+        <div className={cn("grid gap-1 md:gap-2 flex-1", viewMode === 'day' ? "grid-cols-1" : "grid-cols-7")}>
           {viewMode !== 'day' && ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(d => (
-            <div key={d} className="text-center text-xs md:text-sm text-[var(--color-text-muted)] font-medium mb-1 md:mb-2">{d}</div>
+            <div key={d} className="text-center text-xs md:text-sm text-[var(--color-text-muted)] font-medium mb-1">{d}</div>
           ))}
           
           {days.map((d, i) => {
@@ -312,7 +318,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ incomes, debts, bill
                   }
                 }}
                 className={cn(
-                  "p-1.5 md:p-3 rounded-xl md:rounded-2xl border transition-colors flex flex-col gap-1",
+                  "p-1 md:p-2 rounded-xl border transition-colors flex flex-col gap-1",
                   (viewMode === 'month' || viewMode === 'week') && "cursor-pointer hover:border-[var(--color-swamp-green-light)]",
                   viewMode === 'day' ? "min-h-[400px]" : viewMode === 'week' ? "min-h-[200px]" : "min-h-[80px] md:min-h-[100px]",
                   isCurrentMonth || viewMode !== 'month' ? "bg-[rgba(0,0,0,0.2)] border-[var(--color-border-line)]" : "bg-transparent border-transparent opacity-30",
@@ -323,15 +329,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ incomes, debts, bill
                   {viewMode === 'day' ? d.toFormat('dd MMMM yyyy', { locale: 'ru' }) : d.day}
                 </div>
                 
-                <div className={cn("flex flex-col gap-1 flex-1 overflow-y-auto custom-scrollbar", viewMode === 'day' && "gap-3", viewMode === 'month' && "max-md:flex-row max-md:flex-wrap max-md:content-start max-md:justify-center")}>
+                <div className={cn("flex flex-col gap-0.5 md:gap-1 flex-1 overflow-y-auto custom-scrollbar", viewMode === 'day' && "gap-2 md:gap-3", viewMode === 'month' && "max-md:flex-row max-md:flex-wrap max-md:content-start max-md:justify-center")}>
                   {dayIncomes.map((inc, idx) => (
-                    <div key={`inc-${inc.id}-${idx}`} className={cn("rounded-md md:rounded-lg bg-[var(--color-swamp-green-dark)] text-[var(--color-swamp-green-light)] flex flex-col group relative", viewMode === 'day' ? "p-3 text-sm" : "p-1.5 text-[10px] md:text-xs gap-0.5", viewMode === 'month' && "max-md:p-0 max-md:bg-transparent max-md:w-1.5 max-md:h-1.5 max-md:rounded-full max-md:bg-[var(--color-swamp-green-light)]")} title={inc.displayLabel}>
+                    <div key={`inc-${inc.id}-${idx}`} className={cn("rounded-md md:rounded-lg bg-[var(--color-swamp-green-dark)] text-[var(--color-swamp-green-light)] flex flex-col group relative", viewMode === 'day' ? "p-2 md:p-3 text-sm" : "px-1 py-0.5 md:p-1.5 text-[9px] md:text-xs gap-0", viewMode === 'month' && "max-md:p-0 max-md:bg-transparent max-md:w-1.5 max-md:h-1.5 max-md:rounded-full max-md:bg-[var(--color-swamp-green-light)]")} title={inc.displayLabel}>
                       <span className={cn("truncate mr-1 font-medium", viewMode === 'month' && "max-md:hidden")}><FontAwesomeIcon icon={faWallet} className={cn("inline mr-1", viewMode === 'day' ? "w-4 h-4" : "w-2 h-2 md:w-3 md:h-3")}/>{inc.displayLabel}</span>
                       <span className={cn("font-mono opacity-80", viewMode === 'day' ? "text-lg mt-1" : "text-[9px] md:text-[10px]", viewMode === 'month' && "max-md:hidden")}>{formatCurrency(inc.displayAmount)}</span>
                     </div>
                   ))}
                   {dayDebts.map((debt, idx) => (
-                    <div key={`debt-${debt.id}-${idx}`} className={cn("rounded-md md:rounded-lg bg-[var(--color-ash-red-dark)] text-[var(--color-ash-red-light)] flex flex-col group relative", viewMode === 'day' ? "p-3 text-sm" : "p-1.5 text-[10px] md:text-xs gap-0.5", viewMode === 'month' && "max-md:p-0 max-md:bg-transparent max-md:w-1.5 max-md:h-1.5 max-md:rounded-full max-md:bg-[var(--color-ash-red-light)]")} title={debt.name}>
+                    <div key={`debt-${debt.id}-${idx}`} className={cn("rounded-md md:rounded-lg bg-[var(--color-ash-red-dark)] text-[var(--color-ash-red-light)] flex flex-col group relative", viewMode === 'day' ? "p-2 md:p-3 text-sm" : "px-1 py-0.5 md:p-1.5 text-[9px] md:text-xs gap-0", viewMode === 'month' && "max-md:p-0 max-md:bg-transparent max-md:w-1.5 max-md:h-1.5 max-md:rounded-full max-md:bg-[var(--color-ash-red-light)]")} title={debt.name}>
                       <span className={cn("truncate mr-1 font-medium", viewMode === 'month' && "max-md:hidden")}><FontAwesomeIcon icon={faArrowTrendDown} className={cn("inline mr-1", viewMode === 'day' ? "w-4 h-4" : "w-2 h-2 md:w-3 md:h-3")}/>{debt.name}</span>
                       {debt.displayAmount > 0 && (
                         <span className={cn("font-mono opacity-80", viewMode === 'day' ? "text-lg mt-1" : "text-[9px] md:text-[10px]", viewMode === 'month' && "max-md:hidden")}>{formatCurrency(debt.displayAmount)}</span>
@@ -339,7 +345,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ incomes, debts, bill
                     </div>
                   ))}
                   {dayBills.map((bill, idx) => (
-                    <div key={`bill-${bill.id}-${idx}`} className={cn("rounded-md md:rounded-lg bg-[rgba(140,100,74,0.3)] text-yellow-400/90 flex flex-col group relative", viewMode === 'day' ? "p-3 text-sm" : "p-1.5 text-[10px] md:text-xs gap-0.5", viewMode === 'month' && "max-md:p-0 max-md:bg-transparent max-md:w-1.5 max-md:h-1.5 max-md:rounded-full max-md:bg-yellow-500")} title={bill.displayLabel}>
+                    <div key={`bill-${bill.id}-${idx}`} className={cn("rounded-md md:rounded-lg bg-[rgba(140,100,74,0.3)] text-yellow-400/90 flex flex-col group relative", viewMode === 'day' ? "p-2 md:p-3 text-sm" : "px-1 py-0.5 md:p-1.5 text-[9px] md:text-xs gap-0", viewMode === 'month' && "max-md:p-0 max-md:bg-transparent max-md:w-1.5 max-md:h-1.5 max-md:rounded-full max-md:bg-yellow-500")} title={bill.displayLabel}>
                       <span className={cn("truncate mr-1 font-medium", viewMode === 'month' && "max-md:hidden")}><FontAwesomeIcon icon={faFileInvoiceDollar} className={cn("inline mr-1", viewMode === 'day' ? "w-4 h-4" : "w-2 h-2 md:w-3 md:h-3")}/>{bill.displayLabel}</span>
                       <span className={cn("font-mono opacity-80", viewMode === 'day' ? "text-lg mt-1" : "text-[9px] md:text-[10px]", viewMode === 'month' && "max-md:hidden")}>{formatCurrency(bill.displayAmount)}</span>
                     </div>

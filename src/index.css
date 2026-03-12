@@ -99,34 +99,36 @@ input[type="time"] {
   -moz-appearance: textfield;
 }
 
-input, select {
-  background-color: rgba(0,0,0,0.2);
-  border: 1px solid var(--color-border-line);
-  color: var(--color-text-main);
-  outline: none;
-  transition: border-color 0.2s;
+/* Base Input Styles */
+.input-base {
+  @apply w-full p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] text-sm text-[var(--color-text-main)] focus:outline-none hover:border-[var(--color-swamp-green-light)] focus:border-[var(--color-swamp-green-light)] transition-colors;
 }
 
-input:focus, select:focus {
-  border-color: var(--color-swamp-green-light);
+/* Autofill fix */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px var(--color-panel) inset !important;
+    -webkit-text-fill-color: var(--color-text-main) !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Base Button Styles */
+.btn-base {
+  @apply flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-medium transition-colors cursor-pointer;
 }
 
 .btn-primary {
-  background-color: var(--color-swamp-green);
-  color: #fff;
-  transition: all 0.2s;
-}
-.btn-primary:hover {
-  background-color: var(--color-swamp-green-light);
+  @apply bg-[var(--color-swamp-green)] hover:bg-[var(--color-swamp-green-light)] text-white;
 }
 
 .btn-danger {
-  background-color: var(--color-ash-red-dark);
-  color: #fff;
-  transition: all 0.2s;
+  @apply bg-[var(--color-ash-red-dark)] hover:bg-[var(--color-ash-red)] text-white;
 }
-.btn-danger:hover {
-  background-color: var(--color-ash-red);
+
+.btn-secondary {
+  @apply bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] border border-[var(--color-border-line)] text-[var(--color-text-main)];
 }
 
 @supports (padding-bottom: env(safe-area-inset-bottom)) {

@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { motion, Reorder } from 'motion/react';
+import { motion, Reorder, AnimatePresence } from 'motion/react';
 import { DateTime } from 'luxon';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTrash, faArrowTrendDown, faArrowTrendUp, faWallet, faCalendarDays, faTriangleExclamation, faDownload, faUpload, faPen, faRightFromBracket, faChartPie, faHeartPulse, faFileInvoiceDollar } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTrash, faArrowTrendDown, faArrowTrendUp, faWallet, faCalendarDays, faTriangleExclamation, faDownload, faUpload, faPen, faRightFromBracket, faChartPie, faHeartPulse, faFileInvoiceDollar, faGear } from '@fortawesome/free-solid-svg-icons';
+import { useFloating, offset, flip, shift, autoUpdate, useInteractions, useClick, useDismiss, useRole, FloatingPortal, FloatingFocusManager } from '@floating-ui/react';
 import { DevilIcon } from './DevilIcon';
 import { cn } from '../lib/utils';
 import { DebtModal, Debt } from './DebtModal';
@@ -13,6 +14,7 @@ import { IncomeModal, Income } from './IncomeModal';
 import { CalendarView } from './CalendarView';
 import { CustomDatePicker } from './CustomDatePicker';
 import { CustomNumberInput } from './CustomInputs';
+import { SettingsModal } from './SettingsModal';
 import {
   XAxis,
   YAxis,
@@ -40,12 +42,26 @@ export const Dashboard: React.FC = () => {
   const [editingBill, setEditingBill] = useState<Bill | null>(null);
   
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar'>('dashboard');
   const [minBudget, setMinBudget] = useState<number>(15000);
   const [calendarStartDate, setCalendarStartDate] = useState<string>('');
   const [debtStartDate, setDebtStartDate] = useState<string>('');
+
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const { refs: profileRefs, floatingStyles: profileFloatingStyles, context: profileContext } = useFloating({
+    open: isProfileMenuOpen,
+    onOpenChange: setIsProfileMenuOpen,
+    placement: 'bottom-end',
+    whileElementsMounted: autoUpdate,
+    middleware: [offset(8), flip(), shift({ padding: 8 })],
+  });
+  const profileClick = useClick(profileContext);
+  const profileDismiss = useDismiss(profileContext);
+  const profileRole = useRole(profileContext);
+  const { getReferenceProps: getProfileReferenceProps, getFloatingProps: getProfileFloatingProps } = useInteractions([profileClick, profileDismiss, profileRole]);
 
   const fetchData = () => {
     if (user) {
@@ -354,20 +370,20 @@ export const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto flex flex-col pb-24 md:pb-8">
+    <div className={cn("min-h-screen mx-auto flex flex-col pb-24 md:pb-8 transition-all duration-300", activeTab === 'calendar' ? "p-2 md:p-4 max-w-[1800px]" : "p-4 md:p-6 lg:p-8 max-w-[1600px]")}>
       {/* Header */}
-      <header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 pb-6 border-b border-[var(--color-border-line)] gap-4 shrink-0">
-        <div className="flex items-center gap-4 cursor-pointer group">
-          <div className="w-14 h-14 group-hover:scale-105 transition-transform">
+      <header className="flex flex-row items-center justify-between mb-6 md:mb-8 pb-4 md:pb-6 border-b border-[var(--color-border-line)] gap-4 shrink-0">
+        <div className="flex items-center gap-3 md:gap-4 cursor-pointer group flex-1 justify-start min-w-0">
+          <div className="w-10 h-10 md:w-14 md:h-14 shrink-0 group-hover:scale-105 transition-transform">
             <DevilIcon className="w-full h-full" />
           </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold font-mono tracking-wider text-[var(--color-ash-red-light)] group-hover:text-[var(--color-ash-red)] transition-colors">Должная Душа<span className="text-[var(--color-swamp-green-light)]">.swag</span></h1>
-            <p className="text-xs md:text-sm text-[var(--color-text-muted)] font-mono">Аналитика выживания</p>
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-3xl font-bold font-mono tracking-wider text-[var(--color-ash-red-light)] group-hover:text-[var(--color-ash-red)] transition-colors truncate">Должная Душа<span className="text-[var(--color-swamp-green-light)]">.swag</span></h1>
+            <p className="text-[10px] md:text-sm text-[var(--color-text-muted)] font-mono truncate">Аналитика выживания</p>
           </div>
         </div>
 
-        <div className="hidden md:flex bg-[rgba(0,0,0,0.2)] p-1 rounded-2xl border border-[var(--color-border-line)]">
+        <div className="hidden md:flex bg-[rgba(0,0,0,0.2)] p-1 rounded-2xl border border-[var(--color-border-line)] shrink-0">
           <button 
             onClick={() => setActiveTab('dashboard')}
             className={cn("flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium transition-all", activeTab === 'dashboard' ? "bg-[var(--color-panel)] text-white shadow-md" : "text-[var(--color-text-muted)] hover:text-white")}
@@ -382,18 +398,7 @@ export const Dashboard: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto hide-scrollbar pb-2 md:pb-0">
-          <div className="text-sm text-[var(--color-text-muted)] mr-2 hidden md:block shrink-0">
-            Пользователь: <span className="text-white">{user.username}</span>
-          </div>
-          <button 
-            onClick={() => setUser(null)}
-            className="flex items-center justify-center gap-2 text-sm font-mono bg-[rgba(140,74,74,0.1)] hover:bg-[rgba(140,74,74,0.2)] text-[var(--color-ash-red-light)] px-4 py-3 rounded-2xl border border-[var(--color-ash-red-dark)] transition-colors shrink-0"
-            title="Выйти"
-          >
-            <FontAwesomeIcon icon={faRightFromBracket} className="w-4 h-4" />
-          </button>
-          
+        <div className="flex items-center gap-3 w-auto shrink-0 justify-end">
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -401,30 +406,86 @@ export const Dashboard: React.FC = () => {
             accept=".json" 
             className="hidden" 
           />
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center justify-center gap-2 text-sm font-mono bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] px-4 py-3 rounded-2xl linear-border transition-colors shrink-0"
-            title="Импорт JSON"
-          >
-            <FontAwesomeIcon icon={faUpload} className="w-4 h-4 text-[var(--color-text-muted)]" />
-          </button>
-          
-          <button 
-            onClick={handleExportJSON}
-            className="flex items-center justify-center gap-2 text-sm font-mono bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] px-4 py-3 rounded-2xl linear-border transition-colors shrink-0"
-            title="Экспорт JSON"
-          >
-            <FontAwesomeIcon icon={faDownload} className="w-4 h-4 text-[var(--color-text-muted)]" />
-            <span className="hidden sm:inline">JSON</span>
-          </button>
 
-          <button 
-            onClick={() => setIsExportModalOpen(true)}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 text-sm font-mono bg-[var(--color-panel)] hover:bg-[var(--color-panel-hover)] px-4 py-3 rounded-2xl linear-border transition-colors shrink-0"
+          <div 
+            ref={profileRefs.setReference}
+            {...getProfileReferenceProps()}
+            className="flex items-center gap-3 cursor-pointer bg-[rgba(0,0,0,0.2)] p-1.5 md:pr-4 rounded-full border border-[var(--color-border-line)] hover:border-[var(--color-swamp-green-light)] transition-colors shrink-0"
           >
-            <FontAwesomeIcon icon={faDownload} className="w-4 h-4 text-[var(--color-text-muted)]" />
-            <span className="hidden sm:inline">PDF/JPG</span>
-          </button>
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[var(--color-swamp-green-dark)] border border-[var(--color-swamp-green)] flex items-center justify-center text-[var(--color-swamp-green-light)] font-bold uppercase text-sm md:text-base">
+              {user.username.charAt(0)}
+            </div>
+            <span className="text-sm font-medium text-white hidden md:block">{user.username}</span>
+          </div>
+
+          <FloatingPortal>
+            <AnimatePresence>
+              {isProfileMenuOpen && (
+                <FloatingFocusManager context={profileContext} modal={false}>
+                  <div ref={profileRefs.setFloating} style={{ ...profileFloatingStyles, zIndex: 9999 }}>
+                    <motion.div 
+                      {...getProfileFloatingProps()}
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="w-56 bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-2xl shadow-xl overflow-hidden flex flex-col p-1"
+                    >
+                      <div className="px-3 py-2 border-b border-[var(--color-border-line)] mb-1">
+                        <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Профиль</span>
+                        <div className="text-white font-medium truncate mt-1">{user.username}</div>
+                        <div className="text-xs text-[var(--color-ash-red-light)] mt-1 font-mono">Долг: {formatCurrency(totalDebt)}</div>
+                      </div>
+                      
+                      <button 
+                        onClick={() => { setIsSettingsModalOpen(true); setIsProfileMenuOpen(false); }}
+                        className="flex items-center gap-3 px-3 py-2.5 text-sm text-[var(--color-text-main)] hover:bg-[rgba(255,255,255,0.05)] rounded-xl transition-colors text-left"
+                      >
+                        <FontAwesomeIcon icon={faGear} className="w-4 h-4 text-[var(--color-text-muted)]" />
+                        Настройки
+                      </button>
+
+                      <div className="h-px bg-[var(--color-border-line)] my-1" />
+
+                      <button 
+                        onClick={() => { fileInputRef.current?.click(); setIsProfileMenuOpen(false); }}
+                        className="flex items-center gap-3 px-3 py-2.5 text-sm text-[var(--color-text-main)] hover:bg-[rgba(255,255,255,0.05)] rounded-xl transition-colors text-left"
+                      >
+                        <FontAwesomeIcon icon={faUpload} className="w-4 h-4 text-[var(--color-text-muted)]" />
+                        Импорт JSON
+                      </button>
+                      
+                      <button 
+                        onClick={() => { handleExportJSON(); setIsProfileMenuOpen(false); }}
+                        className="flex items-center gap-3 px-3 py-2.5 text-sm text-[var(--color-text-main)] hover:bg-[rgba(255,255,255,0.05)] rounded-xl transition-colors text-left"
+                      >
+                        <FontAwesomeIcon icon={faDownload} className="w-4 h-4 text-[var(--color-text-muted)]" />
+                        Экспорт JSON
+                      </button>
+
+                      <button 
+                        onClick={() => { setIsExportModalOpen(true); setIsProfileMenuOpen(false); }}
+                        className="flex items-center gap-3 px-3 py-2.5 text-sm text-[var(--color-text-main)] hover:bg-[rgba(255,255,255,0.05)] rounded-xl transition-colors text-left"
+                      >
+                        <FontAwesomeIcon icon={faDownload} className="w-4 h-4 text-[var(--color-text-muted)]" />
+                        Экспорт PDF/JPG
+                      </button>
+
+                      <div className="h-px bg-[var(--color-border-line)] my-1" />
+
+                      <button 
+                        onClick={() => { setUser(null); setIsProfileMenuOpen(false); }}
+                        className="flex items-center gap-3 px-3 py-2.5 text-sm text-[var(--color-ash-red-light)] hover:bg-[rgba(140,74,74,0.1)] rounded-xl transition-colors text-left"
+                      >
+                        <FontAwesomeIcon icon={faRightFromBracket} className="w-4 h-4" />
+                        Выйти
+                      </button>
+                    </motion.div>
+                  </div>
+                </FloatingFocusManager>
+              )}
+            </AnimatePresence>
+          </FloatingPortal>
         </div>
       </header>
 
@@ -503,7 +564,7 @@ export const Dashboard: React.FC = () => {
                   <CustomNumberInput 
                     value={minBudget.toString()} 
                     onChange={(val) => handleMinBudgetChange(Number(val))}
-                    className="text-xl text-[var(--color-swamp-green-light)]"
+                    inputClassName="text-xl text-[var(--color-swamp-green-light)]"
                     step={1000}
                   />
                 </div>
@@ -538,7 +599,7 @@ export const Dashboard: React.FC = () => {
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="bento-panel p-6 rounded-3xl flex-1 flex flex-col">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-medium flex items-center gap-2"><FontAwesomeIcon icon={faWallet} className="w-5 h-5 text-[var(--color-swamp-green-light)]"/> Источники дохода</h2>
-                <button onClick={openAddIncome} className="btn-primary p-2 rounded-xl flex items-center gap-2 text-sm px-4">
+                <button onClick={openAddIncome} className="btn-base btn-primary py-2 px-4 text-sm">
                   <FontAwesomeIcon icon={faPlus} className="w-4 h-4" /> <span className="hidden sm:inline">Добавить</span>
                 </button>
               </div>
@@ -570,7 +631,7 @@ export const Dashboard: React.FC = () => {
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }} className="bento-panel p-6 rounded-3xl flex-1 flex flex-col">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-medium flex items-center gap-2"><FontAwesomeIcon icon={faFileInvoiceDollar} className="w-5 h-5 text-yellow-400/80"/> Обязательные платежи</h2>
-                <button onClick={openAddBill} className="btn-primary p-2 rounded-xl flex items-center gap-2 text-sm px-4">
+                <button onClick={openAddBill} className="btn-base btn-primary py-2 px-4 text-sm">
                   <FontAwesomeIcon icon={faPlus} className="w-4 h-4" /> <span className="hidden sm:inline">Добавить</span>
                 </button>
               </div>
@@ -608,7 +669,7 @@ export const Dashboard: React.FC = () => {
             <div className="bento-panel p-6 rounded-3xl flex-1 flex flex-col min-h-[400px]">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-medium flex items-center gap-2"><FontAwesomeIcon icon={faArrowTrendDown} className="w-5 h-5 text-[var(--color-ash-red-light)]"/> Долговая яма</h2>
-                <button onClick={openAddDebt} className="btn-danger p-2 rounded-xl flex items-center gap-2 text-sm px-4">
+                <button onClick={openAddDebt} className="btn-base btn-danger py-2 px-4 text-sm">
                   <FontAwesomeIcon icon={faPlus} className="w-4 h-4" /> <span className="hidden sm:inline">Добавить</span>
                 </button>
               </div>
@@ -721,6 +782,22 @@ export const Dashboard: React.FC = () => {
         totalDebt={totalDebt}
         totalMonthlyPayment={totalMonthlyPayment}
         remainingBudget={remainingBudget}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        user={user}
+        onUpdateUser={(username) => setUser({ ...user, username })}
+        onClearData={() => {
+          setIncomes([]);
+          setDebts([]);
+          setBills([]);
+          setTargetMonths(12);
+          setMinBudget(10000);
+          setCalendarStartDate(DateTime.now().toISODate() || '');
+          setDebtStartDate(DateTime.now().toISODate() || '');
+        }}
       />
 
       {/* Mobile Navigation Bar */}

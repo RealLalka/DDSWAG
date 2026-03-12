@@ -53,11 +53,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl relative overflow-hidden"
+        className="bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col"
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-swamp-green)] opacity-10 rounded-full blur-3xl" />
         
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-8 shrink-0">
           <div className="w-16 h-16 mb-4">
             <DevilIcon className="w-full h-full" />
           </div>
@@ -67,7 +67,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 relative z-10">
+        <div className="overflow-y-auto custom-scrollbar pr-2">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4 relative z-10">
           {error && (
             <div className="bg-[rgba(140,74,74,0.1)] border border-[var(--color-ash-red-dark)] text-[var(--color-ash-red-light)] p-3 rounded-xl text-sm flex items-center gap-2">
               <FontAwesomeIcon icon={faTriangleExclamation} className="w-4 h-4 shrink-0" />
@@ -98,7 +99,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
           <button
             type="submit"
             disabled={loading}
-            className="btn-primary w-full p-4 rounded-xl font-medium mt-4 flex items-center justify-center gap-2 disabled:opacity-50"
+            className="btn-base btn-primary w-full mt-4 disabled:opacity-50"
           >
             {loading ? (
               <span className="animate-pulse">Загрузка...</span>
@@ -110,7 +111,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
           </button>
         </form>
 
-        <div className="mt-6 text-center relative z-10">
+        <div className="mt-6 text-center relative z-10 shrink-0">
           <button
             onClick={() => {
               setIsLogin(!isLogin);
@@ -120,6 +121,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
           >
             {isLogin ? 'Нет аккаунта? Создать' : 'Уже есть аккаунт? Войти'}
           </button>
+        </div>
         </div>
       </motion.div>
     </div>

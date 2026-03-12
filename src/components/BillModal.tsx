@@ -63,9 +63,9 @@ export const BillModal: React.FC<BillModalProps> = ({ isOpen, onClose, onSave, e
           initial={{ opacity: 0, scale: 0.95, y: 20 }} 
           animate={{ opacity: 1, scale: 1, y: 0 }} 
           exit={{ opacity: 0, scale: 0.95, y: 20 }} 
-          className="relative w-full max-w-md bg-[var(--color-bg)] border border-[var(--color-border-line)] rounded-3xl p-6 md:p-8 shadow-2xl z-10"
+          className="relative w-full max-w-md bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-3xl p-6 md:p-8 shadow-2xl z-10 max-h-[90vh] flex flex-col"
         >
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 shrink-0">
             <h2 className="text-2xl font-medium font-mono">
               {editingBill ? 'Редактировать платёж' : 'Новый платёж'}
             </h2>
@@ -74,7 +74,7 @@ export const BillModal: React.FC<BillModalProps> = ({ isOpen, onClose, onSave, e
             </button>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
             <div>
               <label className="block text-sm text-[var(--color-text-muted)] mb-1">Название (например, Коммуналка)</label>
               <CustomInput 
@@ -108,10 +108,10 @@ export const BillModal: React.FC<BillModalProps> = ({ isOpen, onClose, onSave, e
           </div>
 
           <div className="mt-8 flex justify-end gap-3">
-            <button onClick={onClose} className="px-5 py-2.5 rounded-xl font-medium text-[var(--color-text-muted)] hover:bg-[rgba(255,255,255,0.05)] transition-colors">
+            <button onClick={onClose} className="btn-base btn-secondary">
               Отмена
             </button>
-            <button onClick={handleSave} className="px-5 py-2.5 rounded-xl font-medium bg-[var(--color-swamp-green)] text-white hover:opacity-90 transition-opacity">
+            <button onClick={handleSave} className="btn-base btn-primary">
               Сохранить
             </button>
           </div>

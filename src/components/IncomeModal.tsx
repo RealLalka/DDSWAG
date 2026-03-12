@@ -190,7 +190,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSav
 
             <button 
               onClick={handleSave}
-              className="btn-primary w-full p-4 rounded-xl font-medium mt-4 shrink-0"
+              className="btn-base btn-primary w-full mt-4 shrink-0"
               title="Или нажмите Ctrl+Enter"
             >
               {editingIncome ? 'Сохранить изменения' : 'Добавить доход'}

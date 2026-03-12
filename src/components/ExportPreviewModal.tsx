@@ -193,14 +193,14 @@ export const ExportPreviewModal: React.FC<ExportPreviewModalProps> = ({
             <button 
               onClick={handleExportJPG}
               disabled={isExporting}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--color-panel)] border border-[var(--color-border-line)] hover:border-[var(--color-swamp-green-light)] transition-colors"
+              className="btn-base btn-secondary"
             >
               <FontAwesomeIcon icon={faImage} className="w-4 h-4" /> JPG
             </button>
             <button 
               onClick={handleExportPDF}
               disabled={isExporting}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl btn-primary"
+              className="btn-base btn-primary"
             >
               <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4" /> PDF
             </button>

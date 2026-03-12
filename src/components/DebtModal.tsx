@@ -445,7 +445,7 @@ export const DebtModal: React.FC<DebtModalProps> = ({ isOpen, onClose, onSave, e
 
           <button 
             onClick={handleSave}
-            className="w-full mt-6 btn-danger py-3 rounded-xl font-medium shrink-0"
+            className="btn-base btn-danger w-full mt-6 shrink-0"
           >
             {editingDebt ? 'Сохранить изменения' : 'Добавить в яму'}
           </button>

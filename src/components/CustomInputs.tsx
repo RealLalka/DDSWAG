@@ -45,7 +45,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, opt
       <div 
         ref={refs.setReference}
         {...getReferenceProps()}
-        className={cn("w-full p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] flex justify-between items-center cursor-pointer hover:border-[var(--color-swamp-green-light)] transition-colors focus:outline-none focus:border-[var(--color-swamp-green-light)]", className)}
+        className={cn("input-base flex justify-between items-center cursor-pointer", className)}
         tabIndex={0}
       >
         <span className="text-sm">{selectedOption?.label || 'Выберите...'}</span>
@@ -86,6 +86,7 @@ interface CustomNumberInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  inputClassName?: string;
   min?: number;
   max?: number;
   step?: number;
@@ -93,7 +94,7 @@ interface CustomNumberInputProps {
   title?: string;
 }
 
-export const CustomNumberInput: React.FC<CustomNumberInputProps> = ({ value, onChange, placeholder, className, min, max, step = 1, onKeyDown, title }) => {
+export const CustomNumberInput: React.FC<CustomNumberInputProps> = ({ value, onChange, placeholder, className, inputClassName, min, max, step = 1, onKeyDown, title }) => {
   const handleIncrement = () => {
     const val = Number(value) || 0;
     if (max === undefined || val < max) onChange((val + step).toString());
@@ -114,14 +115,14 @@ export const CustomNumberInput: React.FC<CustomNumberInputProps> = ({ value, onC
         min={min}
         max={max}
         step={step}
-        className="w-full p-3 pr-10 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] text-sm font-mono focus:outline-none hover:border-[var(--color-swamp-green-light)] focus:border-[var(--color-swamp-green-light)] transition-colors hide-arrows"
+        className={cn("input-base pr-10 font-mono hide-arrows", inputClassName)}
       />
-      <div className="absolute right-2 flex flex-col gap-0.5">
-        <button type="button" onClick={handleIncrement} className="p-0.5 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] rounded transition-colors" tabIndex={-1}>
-          <FontAwesomeIcon icon={faChevronUp} className="w-3 h-3" />
+      <div className="absolute right-2 flex flex-col gap-1">
+        <button type="button" onClick={handleIncrement} className="w-6 h-4 flex items-center justify-center bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.15)] rounded transition-colors text-[var(--color-text-muted)] hover:text-white" tabIndex={-1}>
+          <FontAwesomeIcon icon={faChevronUp} className="w-2.5 h-2.5" />
         </button>
-        <button type="button" onClick={handleDecrement} className="p-0.5 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] rounded transition-colors" tabIndex={-1}>
-          <FontAwesomeIcon icon={faChevronDown} className="w-3 h-3" />
+        <button type="button" onClick={handleDecrement} className="w-6 h-4 flex items-center justify-center bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.15)] rounded transition-colors text-[var(--color-text-muted)] hover:text-white" tabIndex={-1}>
+          <FontAwesomeIcon icon={faChevronDown} className="w-2.5 h-2.5" />
         </button>
       </div>
     </div>
@@ -133,10 +134,7 @@ export const CustomInput = React.forwardRef<HTMLInputElement, InputHTMLAttribute
     return (
       <input
         ref={ref}
-        className={cn(
-          "w-full p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] text-sm focus:outline-none hover:border-[var(--color-swamp-green-light)] focus:border-[var(--color-swamp-green-light)] transition-colors",
-          className
-        )}
+        className={cn("input-base", className)}
         {...props}
       />
     );
@@ -149,10 +147,7 @@ export const CustomTextArea = React.forwardRef<HTMLTextAreaElement, TextareaHTML
     return (
       <textarea
         ref={ref}
-        className={cn(
-          "w-full p-3 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] text-sm focus:outline-none hover:border-[var(--color-swamp-green-light)] focus:border-[var(--color-swamp-green-light)] transition-colors resize-none",
-          className
-        )}
+        className={cn("input-base resize-none", className)}
         {...props}
       />
     );
