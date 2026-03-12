@@ -65,7 +65,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, opt
                   {options.map(opt => (
                     <div 
                       key={opt.value}
-                      className={cn("p-3 text-sm cursor-pointer hover:bg-[rgba(255,255,255,0.05)] transition-colors", value === opt.value && "bg-[var(--color-swamp-green-dark)] text-white")}
+                      className={cn("p-3 text-sm cursor-pointer hover:bg-white/5 transition-colors", value === opt.value && "bg-[var(--color-swamp-green-dark)] text-white")}
                       onClick={() => { onChange(opt.value); setIsOpen(false); }}
                     >
                       {opt.label}
@@ -118,10 +118,10 @@ export const CustomNumberInput: React.FC<CustomNumberInputProps> = ({ value, onC
         className={cn("input-base pr-10 font-mono hide-arrows", inputClassName)}
       />
       <div className="absolute right-2 flex flex-col gap-1">
-        <button type="button" onClick={handleIncrement} className="w-6 h-4 flex items-center justify-center bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.15)] rounded transition-colors text-[var(--color-text-muted)] hover:text-white" tabIndex={-1}>
+        <button type="button" onClick={handleIncrement} className="w-6 h-4 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded transition-colors text-[var(--color-text-muted)] hover:text-white" tabIndex={-1}>
           <FontAwesomeIcon icon={faChevronUp} className="w-2.5 h-2.5" />
         </button>
-        <button type="button" onClick={handleDecrement} className="w-6 h-4 flex items-center justify-center bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.15)] rounded transition-colors text-[var(--color-text-muted)] hover:text-white" tabIndex={-1}>
+        <button type="button" onClick={handleDecrement} className="w-6 h-4 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded transition-colors text-[var(--color-text-muted)] hover:text-white" tabIndex={-1}>
           <FontAwesomeIcon icon={faChevronDown} className="w-2.5 h-2.5" />
         </button>
       </div>

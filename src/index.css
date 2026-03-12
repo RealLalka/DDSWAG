@@ -5,9 +5,9 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   
-  --color-bg-dark: #030403;
-  --color-panel: #0d0f0e;
-  --color-panel-hover: #151816;
+  --color-bg-dark: #000000;
+  --color-panel: #1c1c1e;
+  --color-panel-hover: #2c2c2e;
   
   --color-ash-red: #8c4a4a;
   --color-ash-red-light: #a85c5c;

@@ -195,7 +195,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ incomes, debts, bill
     <motion.div 
       initial={{ opacity: 0, y: 20 }} 
       animate={{ opacity: 1, y: 0 }} 
-      className="bento-panel p-2 md:p-4 rounded-3xl flex-1 flex flex-col min-h-[600px]"
+      className="bento-panel p-2 md:p-4 rounded-[2.5rem] flex-1 flex flex-col min-h-[600px]"
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4 px-2 md:px-0">
         <h2 className="text-xl md:text-2xl font-medium font-mono text-[var(--color-swamp-green-light)] capitalize">

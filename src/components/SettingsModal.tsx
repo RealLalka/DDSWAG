@@ -50,12 +50,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, u
         >
           <div className="flex justify-between items-center mb-6 shrink-0">
             <h2 className="text-2xl font-medium font-mono">Настройки</h2>
-            <button onClick={onClose} className="p-2 hover:bg-[rgba(255,255,255,0.1)] rounded-full transition-colors">
+            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
               <FontAwesomeIcon icon={faXmark} className="w-5 h-5 text-[var(--color-text-muted)]" />
             </button>
           </div>
 
-          <div className="flex gap-2 mb-6 bg-[rgba(0,0,0,0.2)] p-1 rounded-2xl border border-[var(--color-border-line)] shrink-0">
+          <div className="flex gap-2 mb-6 bg-white/5 p-1 rounded-2xl border border-[var(--color-border-line)] shrink-0">
             <button 
               onClick={() => setActiveTab('profile')}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'profile' ? 'bg-[var(--color-panel)] text-white shadow-md' : 'text-[var(--color-text-muted)] hover:text-white'}`}
@@ -93,7 +93,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, u
 
             {activeTab === 'data' && (
               <div className="space-y-6">
-                <div className="bg-[rgba(140,74,74,0.1)] border border-[var(--color-ash-red-dark)] rounded-2xl p-5">
+                <div className="bg-rose-500/10 border border-[var(--color-ash-red-dark)] rounded-2xl p-5">
                   <h3 className="text-[var(--color-ash-red-light)] font-medium flex items-center gap-2 mb-2">
                     <FontAwesomeIcon icon={faTriangleExclamation} /> Опасная зона
                   </h3>

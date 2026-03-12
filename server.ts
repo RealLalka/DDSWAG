@@ -15,7 +15,7 @@ async function startServer() {
     if (!username || !password) return res.status(400).json({ error: 'Missing fields' });
 
     try {
-      const hash = await bcrypt.hash(password, 10);
+      const hash = await bcrypt.hash(password, 12);
       const stmt = db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)');
       const info = stmt.run(username, hash);
       res.json({ 

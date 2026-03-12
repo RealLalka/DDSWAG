@@ -335,7 +335,7 @@ export const DebtModal: React.FC<DebtModalProps> = ({ isOpen, onClose, onSave, e
 
             {type === 'split' && (
               <div className="space-y-4">
-                <div className="bg-[rgba(0,0,0,0.2)] p-4 rounded-xl border border-[var(--color-border-line)] space-y-3">
+                <div className="bg-white/5 p-4 rounded-xl border border-[var(--color-border-line)] space-y-3">
                   <h3 className="text-sm font-medium text-[var(--color-text-muted)]">Генерация графика</h3>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -391,7 +391,7 @@ export const DebtModal: React.FC<DebtModalProps> = ({ isOpen, onClose, onSave, e
                   </div>
                   
                   {schedule.length === 0 ? (
-                    <div className="text-sm text-[var(--color-text-muted)] text-center py-4 bg-[rgba(0,0,0,0.2)] rounded-xl border border-dashed border-[var(--color-border-line)]">
+                    <div className="text-sm text-[var(--color-text-muted)] text-center py-4 bg-white/5 rounded-xl border border-dashed border-[var(--color-border-line)]">
                       Нет запланированных платежей
                     </div>
                   ) : (
@@ -405,7 +405,7 @@ export const DebtModal: React.FC<DebtModalProps> = ({ isOpen, onClose, onSave, e
                         
                         return (
                         <div key={item.id} className="flex gap-2 items-center">
-                          <div className="flex flex-col items-center justify-center w-12 shrink-0 bg-[rgba(0,0,0,0.2)] rounded-xl py-1 border border-[var(--color-border-line)]">
+                          <div className="flex flex-col items-center justify-center w-12 shrink-0 bg-white/5 rounded-xl py-1 border border-[var(--color-border-line)]">
                             <span className="text-xs font-medium text-[var(--color-text-main)] truncate w-full text-center px-1">
                               {item.groupId && item.groupId !== '-' ? item.groupId : '-'}
                             </span>

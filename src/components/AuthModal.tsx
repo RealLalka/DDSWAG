@@ -53,7 +53,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col"
+        className="bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-[2.5rem] p-6 md:p-8 w-full max-w-md shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col"
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-swamp-green)] opacity-10 rounded-full blur-3xl" />
         

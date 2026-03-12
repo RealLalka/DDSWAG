@@ -87,7 +87,7 @@ export const ExportPreviewModal: React.FC<ExportPreviewModalProps> = ({
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-medium">Экспорт плана</h2>
             <div className="flex items-center gap-4">
-              <div className="flex bg-[rgba(0,0,0,0.3)] rounded-lg p-1">
+              <div className="flex bg-black/30 rounded-lg p-1">
                 <button 
                   onClick={() => setOrientation('landscape')}
                   className={cn("px-3 py-1 rounded-md text-sm transition-colors", orientation === 'landscape' ? "bg-[var(--color-swamp-green)] text-white" : "text-[var(--color-text-muted)]")}

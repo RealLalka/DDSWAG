@@ -383,18 +383,18 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="hidden md:flex bg-[rgba(0,0,0,0.2)] p-1 rounded-2xl border border-[var(--color-border-line)] shrink-0">
+        <div className="flex bg-[rgba(0,0,0,0.2)] p-1 rounded-2xl border border-[var(--color-border-line)] shrink-0 max-md:fixed max-md:bottom-4 max-md:left-1/2 max-md:-translate-x-1/2 max-md:z-50 max-md:shadow-2xl max-md:bg-[var(--color-bg-dark)] max-md:border-[var(--color-border-line)]">
           <button 
             onClick={() => setActiveTab('dashboard')}
-            className={cn("flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium transition-all", activeTab === 'dashboard' ? "bg-[var(--color-panel)] text-white shadow-md" : "text-[var(--color-text-muted)] hover:text-white")}
+            className={cn("flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all", activeTab === 'dashboard' ? "bg-[var(--color-panel)] text-white shadow-md" : "text-[var(--color-text-muted)] hover:text-white")}
           >
-            <FontAwesomeIcon icon={faChartPie} className="w-4 h-4" /> Дашборд
+            <FontAwesomeIcon icon={faChartPie} className="w-4 h-4" /> <span className="hidden sm:inline">Дашборд</span>
           </button>
           <button 
             onClick={() => setActiveTab('calendar')}
-            className={cn("flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium transition-all", activeTab === 'calendar' ? "bg-[var(--color-panel)] text-white shadow-md" : "text-[var(--color-text-muted)] hover:text-white")}
+            className={cn("flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all", activeTab === 'calendar' ? "bg-[var(--color-panel)] text-white shadow-md" : "text-[var(--color-text-muted)] hover:text-white")}
           >
-            <FontAwesomeIcon icon={faCalendarDays} className="w-4 h-4" /> Календарь
+            <FontAwesomeIcon icon={faCalendarDays} className="w-4 h-4" /> <span className="hidden sm:inline">Календарь</span>
           </button>
         </div>
 
@@ -501,40 +501,65 @@ export const Dashboard: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-4 md:gap-6 flex-1">
           {/* Summary Cards */}
-          <div className="col-span-1 md:col-span-6 lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-6">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bento-panel p-8 rounded-[2rem] flex flex-col justify-between bg-[var(--color-swamp-green-dark)] border-[var(--color-swamp-green)] relative overflow-hidden group shadow-lg min-h-[160px]">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full blur-3xl group-hover:opacity-10 transition-opacity" />
-              <span className="text-sm text-[var(--color-swamp-green-light)] flex items-center gap-2 uppercase tracking-wider relative z-10"><FontAwesomeIcon icon={faWallet} className="w-4 h-4"/> Доход</span>
-              <span className="text-3xl md:text-4xl font-mono text-white truncate relative z-10 mt-2">{formatCurrency(totalIncome)}</span>
-            </motion.div>
-            
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bento-panel p-8 rounded-[2rem] flex flex-col justify-between bg-[var(--color-ash-red-dark)] border-[var(--color-ash-red)] relative overflow-hidden group shadow-lg min-h-[160px]">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full blur-3xl group-hover:opacity-10 transition-opacity" />
-              <span className="text-sm text-[var(--color-ash-red-light)] flex items-center gap-2 uppercase tracking-wider relative z-10"><FontAwesomeIcon icon={faArrowTrendDown} className="w-4 h-4"/> Долг</span>
-              <span className="text-3xl md:text-4xl font-mono text-white truncate relative z-10 mt-2">{formatCurrency(totalDebt)}</span>
-            </motion.div>
-            
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bento-panel p-8 rounded-[2rem] flex flex-col justify-between bg-[rgba(140,74,74,0.3)] border-[var(--color-ash-red-dark)] relative overflow-hidden group shadow-lg min-h-[160px]">
-              <span className="text-sm text-[var(--color-ash-red-light)] flex items-center gap-2 uppercase tracking-wider"><FontAwesomeIcon icon={faArrowTrendUp} className="w-4 h-4"/> Платёж</span>
-              <span className="text-3xl md:text-4xl font-mono text-white truncate mt-2">{formatCurrency(totalMonthlyPayment)}</span>
+          <div className="col-span-1 md:col-span-6 lg:col-span-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-4 md:gap-6">
+            {/* Widget 1: Cashflow Stack */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-[var(--color-panel)] rounded-[2.5rem] p-4 flex flex-col gap-3 col-span-2 md:col-span-4 lg:col-span-4 justify-center shadow-lg">
+              {/* Income */}
+              <div className="w-full bg-[var(--color-swamp-green-dark)] rounded-[1.5rem] p-2 md:p-3 flex justify-between items-center pr-4 md:pr-5">
+                <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[var(--color-swamp-green)] flex items-center justify-center shadow-sm shrink-0">
+                    <FontAwesomeIcon icon={faWallet} className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                  </div>
+                  <span className="text-xs md:text-sm font-medium text-white/90 truncate">Доход</span>
+                </div>
+                <span className="font-mono text-sm md:text-lg text-white font-bold truncate ml-2">{formatCurrency(totalIncome)}</span>
+              </div>
+              {/* Payment */}
+              <div className="w-full bg-[var(--color-ash-red-dark)] rounded-[1.5rem] p-2 md:p-3 flex justify-between items-center pr-4 md:pr-5">
+                <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[var(--color-ash-red)] flex items-center justify-center shadow-sm shrink-0">
+                    <FontAwesomeIcon icon={faArrowTrendUp} className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                  </div>
+                  <span className="text-xs md:text-sm font-medium text-white/90 truncate">Платёж</span>
+                </div>
+                <span className="font-mono text-sm md:text-lg text-white font-bold truncate ml-2">{formatCurrency(totalMonthlyPayment)}</span>
+              </div>
+              {/* Bills */}
+              <div className="w-full bg-[rgba(140,100,74,0.2)] rounded-[1.5rem] p-2 md:p-3 flex justify-between items-center pr-4 md:pr-5">
+                <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[rgba(140,100,74,0.5)] flex items-center justify-center shadow-sm shrink-0">
+                    <FontAwesomeIcon icon={faFileInvoiceDollar} className="w-3 h-3 md:w-4 md:h-4 text-yellow-500" />
+                  </div>
+                  <span className="text-xs md:text-sm font-medium text-white/90 truncate">Счета</span>
+                </div>
+                <span className="font-mono text-sm md:text-lg text-yellow-500 font-bold truncate ml-2">{formatCurrency(totalBills)}</span>
+              </div>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.21 }} className="bento-panel p-8 rounded-[2rem] flex flex-col justify-between bg-[rgba(140,100,74,0.3)] border-[var(--color-border-line)] relative overflow-hidden group shadow-lg min-h-[160px]">
-              <span className="text-sm text-yellow-400/80 flex items-center gap-2 uppercase tracking-wider"><FontAwesomeIcon icon={faFileInvoiceDollar} className="w-4 h-4"/> Обязательные</span>
-              <span className="text-3xl md:text-4xl font-mono text-white truncate mt-2">{formatCurrency(totalBills)}</span>
+            {/* Widget 2: Debt */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-[var(--color-panel)] rounded-[2.5rem] p-4 flex flex-col items-center justify-between gap-3 col-span-1 md:col-span-2 lg:col-span-3 min-h-[200px] shadow-lg">
+              <div className="w-full flex-1 bg-[var(--color-ash-red)] rounded-[2rem] flex flex-col items-center justify-center px-4 relative overflow-hidden shadow-inner">
+                <FontAwesomeIcon icon={faArrowTrendDown} className="absolute top-4 left-4 md:top-5 md:left-5 w-4 h-4 md:w-5 md:h-5 text-white/30" />
+                <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-mono text-white font-bold truncate z-10 w-full text-center">{formatCurrency(totalDebt)}</span>
+              </div>
+              <span className="text-xs md:text-sm text-white/60 font-medium pb-1">Общий долг</span>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="bento-panel p-8 rounded-[2rem] flex flex-col justify-between bg-[rgba(0,0,0,0.2)] border-[var(--color-border-line)] relative overflow-hidden group shadow-lg min-h-[160px]">
-              <span className="text-sm text-[var(--color-text-muted)] flex items-center gap-2 uppercase tracking-wider"><FontAwesomeIcon icon={faHeartPulse} className="w-4 h-4"/> DTI (Нагрузка)</span>
-              <span className={cn("text-3xl md:text-4xl font-mono truncate mt-2", dti > 50 ? "text-[var(--color-ash-red-light)]" : dti > 30 ? "text-yellow-400" : "text-[var(--color-swamp-green-light)]")}>{dti.toFixed(1)}%</span>
+            {/* Widget 3: Remaining */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-[var(--color-panel)] rounded-[2.5rem] p-4 flex flex-col items-center justify-between gap-3 col-span-1 md:col-span-2 lg:col-span-3 min-h-[200px] shadow-lg">
+              <div className={cn("w-full flex-1 rounded-[2rem] flex flex-col items-center justify-center px-4 relative overflow-hidden shadow-inner", remainingBudget >= minBudget ? "bg-[#E0E0E0] text-[var(--color-panel)]" : "bg-[var(--color-ash-red)] text-white")}>
+                <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-mono font-bold truncate z-10 w-full text-center">{formatCurrency(remainingBudget)}</span>
+              </div>
+              <span className="text-xs md:text-sm text-white/60 font-medium pb-1">Остаток</span>
             </motion.div>
-            
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className={cn("bento-panel p-8 rounded-[2rem] flex flex-col justify-between relative overflow-hidden shadow-lg min-h-[160px]", remainingBudget >= minBudget ? "bg-[var(--color-swamp-green)] border-[var(--color-swamp-green-light)]" : "bg-[var(--color-ash-red)] border-[var(--color-ash-red-light)]")}>
-              <div className="absolute -bottom-10 -right-10 w-48 h-48 rounded-full blur-3xl opacity-20 bg-white" />
-              <span className="text-sm text-white/80 flex items-center gap-2 uppercase tracking-wider relative z-10">Остаток <FontAwesomeIcon icon={faTriangleExclamation} className="w-4 h-4 text-white/90"/></span>
-              <span className="text-4xl md:text-5xl font-mono font-bold text-white truncate relative z-10 mt-2">
-                {formatCurrency(remainingBudget)}
-              </span>
+
+            {/* Widget 4: DTI */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-[var(--color-panel)] rounded-[2.5rem] p-4 flex flex-col items-center justify-between gap-3 col-span-2 md:col-span-4 lg:col-span-2 min-h-[200px] shadow-lg">
+              <div className="w-full flex-1 bg-[rgba(255,255,255,0.05)] rounded-[2rem] flex flex-col items-center justify-center px-2 relative">
+                <FontAwesomeIcon icon={faHeartPulse} className={cn("w-6 h-6 md:w-8 md:h-8 mb-2 md:mb-3", dti > 50 ? "text-[var(--color-ash-red-light)]" : dti > 30 ? "text-yellow-400" : "text-[var(--color-swamp-green-light)]")} />
+                <span className={cn("text-xl md:text-2xl font-mono font-bold", dti > 50 ? "text-[var(--color-ash-red-light)]" : dti > 30 ? "text-yellow-400" : "text-[var(--color-swamp-green-light)]")}>{dti.toFixed(1)}%</span>
+              </div>
+              <span className="text-xs md:text-sm text-white/60 font-medium pb-1">Нагрузка</span>
             </motion.div>
           </div>
 
@@ -542,7 +567,7 @@ export const Dashboard: React.FC = () => {
           <div className="col-span-1 md:col-span-3 lg:col-span-4 flex flex-col gap-4 md:gap-6">
             
             {/* Settings Panel */}
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="bento-panel p-6 rounded-3xl">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="bento-panel p-6 rounded-[2.5rem]">
               <h2 className="text-lg font-medium mb-6 flex items-center gap-2"><FontAwesomeIcon icon={faCalendarDays} className="w-5 h-5 text-[var(--color-swamp-green-light)]"/> Горизонт планирования</h2>
               <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-3">
@@ -596,7 +621,7 @@ export const Dashboard: React.FC = () => {
             </motion.div>
 
             {/* Income Panel */}
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="bento-panel p-6 rounded-3xl flex-1 flex flex-col">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="bento-panel p-6 rounded-[2.5rem] flex-1 flex flex-col">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-medium flex items-center gap-2"><FontAwesomeIcon icon={faWallet} className="w-5 h-5 text-[var(--color-swamp-green-light)]"/> Источники дохода</h2>
                 <button onClick={openAddIncome} className="btn-base btn-primary py-2 px-4 text-sm">
@@ -628,7 +653,7 @@ export const Dashboard: React.FC = () => {
             </motion.div>
 
             {/* Bills Panel */}
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }} className="bento-panel p-6 rounded-3xl flex-1 flex flex-col">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }} className="bento-panel p-6 rounded-[2.5rem] flex-1 flex flex-col">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-medium flex items-center gap-2"><FontAwesomeIcon icon={faFileInvoiceDollar} className="w-5 h-5 text-yellow-400/80"/> Обязательные платежи</h2>
                 <button onClick={openAddBill} className="btn-base btn-primary py-2 px-4 text-sm">
@@ -666,7 +691,7 @@ export const Dashboard: React.FC = () => {
           {/* Middle Column: Debts */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="col-span-1 md:col-span-3 lg:col-span-8 flex flex-col gap-4 md:gap-6">
             
-            <div className="bento-panel p-6 rounded-3xl flex-1 flex flex-col min-h-[400px]">
+            <div className="bento-panel p-6 rounded-[2.5rem] flex-1 flex flex-col min-h-[400px]">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-medium flex items-center gap-2"><FontAwesomeIcon icon={faArrowTrendDown} className="w-5 h-5 text-[var(--color-ash-red-light)]"/> Долговая яма</h2>
                 <button onClick={openAddDebt} className="btn-base btn-danger py-2 px-4 text-sm">
@@ -723,7 +748,7 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* Bottom Chart */}
-            <div className="bento-panel p-6 rounded-3xl h-64 lg:h-80">
+            <div className="bento-panel p-6 rounded-[2.5rem] h-64 lg:h-80">
               <h2 className="text-sm font-medium mb-4 flex items-center gap-2 text-[var(--color-text-muted)] uppercase tracking-wider">Проекция сжигания долга</h2>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>

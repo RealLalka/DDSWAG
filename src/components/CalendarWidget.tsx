@@ -47,7 +47,7 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({ incomes, debts }
         </span>
         
         {isToday && (
-          <div className="absolute inset-0 bg-[rgba(255,255,255,0.1)] rounded-xl" />
+          <div className="absolute inset-0 bg-white/10 rounded-xl" />
         )}
 
         <div className="absolute bottom-1.5 flex gap-1 z-10">
@@ -96,7 +96,7 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({ incomes, debts }
           <FontAwesomeIcon icon={faCalendarDays} className="w-5 h-5 text-[var(--color-swamp-green-light)]"/> 
           Календарь
         </h2>
-        <div className="flex items-center gap-3 bg-[rgba(0,0,0,0.2)] rounded-xl p-1 border border-[var(--color-border-line)]">
+        <div className="flex items-center gap-3 bg-white/5 rounded-xl p-1 border border-[var(--color-border-line)]">
           <button onClick={prevMonth} className="p-1 hover:bg-[var(--color-panel)] rounded-lg transition-colors text-[var(--color-text-muted)] hover:text-white">
             <FontAwesomeIcon icon={faChevronLeft} className="w-4 h-4" />
           </button>

@@ -69,7 +69,7 @@ export const BillModal: React.FC<BillModalProps> = ({ isOpen, onClose, onSave, e
             <h2 className="text-2xl font-medium font-mono">
               {editingBill ? 'Редактировать платёж' : 'Новый платёж'}
             </h2>
-            <button onClick={onClose} className="p-2 hover:bg-[rgba(255,255,255,0.1)] rounded-full transition-colors">
+            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
               <FontAwesomeIcon icon={faXmark} className="w-5 h-5 text-[var(--color-text-muted)]" />
             </button>
           </div>

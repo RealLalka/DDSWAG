@@ -115,7 +115,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSav
               <FontAwesomeIcon icon={faWallet} className="w-5 h-5 text-[var(--color-swamp-green-light)]" />
               {editingIncome ? 'Редактировать доход' : 'Добавить доход'}
             </h2>
-            <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white transition-colors p-1 bg-[rgba(0,0,0,0.2)] rounded-full">
+            <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white transition-colors p-1 bg-white/5 rounded-full">
               <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
             </button>
           </div>
@@ -142,7 +142,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSav
               
               <div className="space-y-3">
                 {payments.map((payment) => (
-                  <div key={payment.id} className="flex flex-col gap-2 p-3 rounded-xl border border-[var(--color-border-line)] bg-[rgba(0,0,0,0.1)]">
+                  <div key={payment.id} className="flex flex-col gap-2 p-3 rounded-xl border border-[var(--color-border-line)] bg-white/5">
                     <div className="flex gap-2 items-start">
                       <div className="flex-1 flex flex-col gap-1">
                         <CustomInput 
@@ -171,7 +171,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSav
                         </div>
                       </div>
                       {payments.length > 1 && (
-                        <button onClick={() => handleRemovePayment(payment.id)} className="p-2 text-[var(--color-ash-red)] hover:bg-[rgba(255,0,0,0.1)] rounded-lg transition-colors mt-1">
+                        <button onClick={() => handleRemovePayment(payment.id)} className="p-2 text-[var(--color-ash-red)] hover:bg-rose-500/10 rounded-lg transition-colors mt-1">
                           <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
                         </button>
                       )}

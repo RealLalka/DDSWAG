@@ -78,7 +78,7 @@ export const CustomDayPicker: React.FC<CustomDayPickerProps> = ({ value, onChang
                           onClick={() => handleSelectDay(day)}
                           className={cn(
                             "w-8 h-8 flex items-center justify-center rounded-lg text-xs font-mono transition-colors",
-                            !isSelected && "hover:bg-[rgba(255,255,255,0.1)] text-[var(--color-text-muted)] hover:text-white",
+                            !isSelected && "hover:bg-white/10 text-[var(--color-text-muted)] hover:text-white",
                             isSelected && "bg-[var(--color-swamp-green-dark)] text-[var(--color-swamp-green-light)] border border-[var(--color-swamp-green)] shadow-md"
                           )}
                         >

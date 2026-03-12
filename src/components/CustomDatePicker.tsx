@@ -95,7 +95,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                   <div className="flex items-center justify-between mb-4">
                     <button 
                       onClick={handlePrevMonth}
-                      className="p-1 rounded-lg hover:bg-[rgba(255,255,255,0.1)] text-[var(--color-text-muted)] hover:text-white transition-colors"
+                      className="p-1 rounded-lg hover:bg-white/10 text-[var(--color-text-muted)] hover:text-white transition-colors"
                     >
                       <FontAwesomeIcon icon={faChevronLeft} className="w-5 h-5" />
                     </button>
@@ -104,7 +104,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                     </span>
                     <button 
                       onClick={handleNextMonth}
-                      className="p-1 rounded-lg hover:bg-[rgba(255,255,255,0.1)] text-[var(--color-text-muted)] hover:text-white transition-colors"
+                      className="p-1 rounded-lg hover:bg-white/10 text-[var(--color-text-muted)] hover:text-white transition-colors"
                     >
                       <FontAwesomeIcon icon={faChevronRight} className="w-5 h-5" />
                     </button>
@@ -131,7 +131,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                           className={cn(
                             "w-8 h-8 flex items-center justify-center rounded-lg text-xs font-mono transition-colors",
                             !isCurrentMonth && "text-[var(--color-text-muted)] opacity-50",
-                            isCurrentMonth && !isSelected && !isToday && "hover:bg-[rgba(255,255,255,0.1)]",
+                            isCurrentMonth && !isSelected && !isToday && "hover:bg-white/10",
                             isToday && !isSelected && "border border-[var(--color-swamp-green-light)] text-[var(--color-swamp-green-light)]",
                             isSelected && "bg-[var(--color-swamp-green-dark)] text-[var(--color-swamp-green-light)] border border-[var(--color-swamp-green)] shadow-md"
                           )}
