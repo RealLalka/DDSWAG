@@ -73,16 +73,19 @@ export const ExportPreviewModal: React.FC<ExportPreviewModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div 
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
-      >
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          exit={{ opacity: 0 }} 
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
+          onClick={onClose} 
+        />
         <motion.div
-          onClick={e => e.stopPropagation()}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-3xl p-6 w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl"
+          className="bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-3xl p-6 w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl z-10"
         >
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-medium">Экспорт плана</h2>

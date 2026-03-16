@@ -15,6 +15,7 @@ import { CalendarView } from './CalendarView';
 import { CustomDatePicker } from './CustomDatePicker';
 import { CustomNumberInput } from './CustomInputs';
 import { SettingsModal } from './SettingsModal';
+import { Payment } from './PaymentModal';
 import {
   XAxis,
   YAxis,
@@ -26,11 +27,13 @@ import {
 } from 'recharts';
 
 export const Dashboard: React.FC = () => {
-  const [user, setUser] = useState<{ id: number; username: string; minBudget: number; calendarStartDate?: string; debtStartDate?: string; } | null>(null);
+  const [user, setUser] = useState<{ id: number; username: string; minBudget: number; calendarStartDate?: string; debtStartDate?: string; targetMonths?: number; avatarUrl?: string; } | null>(null);
   
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [itemShifts, setItemShifts] = useState<any[]>([]);
   
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [editingIncome, setEditingIncome] = useState<Income | null>(null);
@@ -79,15 +82,31 @@ export const Dashboard: React.FC = () => {
         .then(res => res.json())
         .then(data => setBills(data))
         .catch(console.error);
+
+      fetch(`/api/payments?userId=${user.id}`)
+        .then(res => res.json())
+        .then(data => setPayments(data))
+        .catch(console.error);
+
+      fetch(`/api/item-shifts?userId=${user.id}`)
+        .then(res => res.json())
+        .then(data => setItemShifts(data))
+        .catch(console.error);
     }
   };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchData();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (user) {
       setMinBudget(user.minBudget || 15000);
       setCalendarStartDate(user.calendarStartDate || DateTime.now().toISODate() || '');
       setDebtStartDate(user.debtStartDate || DateTime.now().toISODate() || '');
-      fetchData();
+      setTargetMonths(user.targetMonths || 24);
     }
   }, [user]);
 
@@ -105,6 +124,18 @@ export const Dashboard: React.FC = () => {
           calendarStartDate: field === 'calendarStartDate' ? val : calendarStartDate,
           debtStartDate: field === 'debtStartDate' ? val : debtStartDate
         })
+      });
+    }
+  };
+
+  const handleTargetMonthsChange = async (val: number) => {
+    setTargetMonths(val);
+    if (user) {
+      setUser({ ...user, targetMonths: val });
+      await fetch(`/api/users/${user.id}/target-months`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetMonths: val })
       });
     }
   };
@@ -169,8 +200,15 @@ export const Dashboard: React.FC = () => {
   };
 
   // Calculations
+  const remainingDebts = useMemo(() => {
+    return debts.map(debt => {
+      const paid = payments.filter(p => p.itemId === debt.id && p.itemType === 'debt').reduce((acc, p) => acc + p.amount, 0);
+      return { ...debt, amount: Math.max(0, debt.amount - paid) };
+    });
+  }, [debts, payments]);
+
   const totalIncome = useMemo(() => incomes.reduce((sum, item) => sum + item.amount, 0), [incomes]);
-  const totalDebt = useMemo(() => debts.reduce((sum, item) => sum + item.amount, 0), [debts]);
+  const totalDebt = useMemo(() => remainingDebts.reduce((sum, item) => sum + item.amount, 0), [remainingDebts]);
   const totalBills = useMemo(() => bills.reduce((sum, item) => sum + item.amount, 0), [bills]);
 
   const calculateMonthlyPaymentForDebt = (debt: Debt, months: number) => {
@@ -191,13 +229,13 @@ export const Dashboard: React.FC = () => {
 
   const minMonths = useMemo(() => {
     for (let m = 1; m <= 120; m++) {
-      const payment = debts.reduce((sum, debt) => sum + calculateMonthlyPaymentForDebt(debt, m), 0);
+      const payment = remainingDebts.reduce((sum, debt) => sum + calculateMonthlyPaymentForDebt(debt, m), 0);
       if (totalIncome - payment - totalBills >= minBudget) {
         return m;
       }
     }
     return 120;
-  }, [debts, totalIncome, minBudget, totalBills]);
+  }, [remainingDebts, totalIncome, minBudget, totalBills]);
 
   const [targetMonths, setTargetMonths] = useState<number>(24);
 
@@ -208,11 +246,11 @@ export const Dashboard: React.FC = () => {
   }, [minMonths, targetMonths]);
 
   const monthlyPayments = useMemo(() => {
-    return debts.map(debt => ({
+    return remainingDebts.map(debt => ({
       ...debt,
       monthlyPayment: calculateMonthlyPaymentForDebt(debt, targetMonths)
     }));
-  }, [debts, targetMonths]);
+  }, [remainingDebts, targetMonths]);
 
   const totalMonthlyPayment = useMemo(() => 
     monthlyPayments.reduce((sum, item) => sum + item.monthlyPayment, 0)
@@ -230,11 +268,11 @@ export const Dashboard: React.FC = () => {
         month: i,
         debt: Math.max(0, Math.round(currentTotalDebt)),
       });
-      const principalPaid = totalMonthlyPayment - (currentTotalDebt * (debts.reduce((acc, d) => acc + d.rate, 0) / (debts.length || 1)) / 100 / 12);
+      const principalPaid = totalMonthlyPayment - (currentTotalDebt * (remainingDebts.reduce((acc, d) => acc + d.rate, 0) / (remainingDebts.length || 1)) / 100 / 12);
       currentTotalDebt -= principalPaid;
     }
     return data;
-  }, [totalDebt, targetMonths, totalMonthlyPayment, debts]);
+  }, [totalDebt, targetMonths, totalMonthlyPayment, remainingDebts]);
 
   // Handlers
   const handleSaveIncome = async (income: Income) => {
@@ -371,7 +409,6 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className={cn("min-h-screen mx-auto flex flex-col pb-24 md:pb-8 transition-all duration-300", activeTab === 'calendar' ? "p-2 md:p-4 max-w-[1800px]" : "p-4 md:p-6 lg:p-8 max-w-[1600px]")}>
-      {/* Header */}
       <header className="flex flex-row items-center justify-between mb-6 md:mb-8 pb-4 md:pb-6 border-b border-[var(--color-border-line)] gap-4 shrink-0">
         <div className="flex items-center gap-3 md:gap-4 cursor-pointer group flex-1 justify-start min-w-0">
           <div className="w-10 h-10 md:w-14 md:h-14 shrink-0 group-hover:scale-105 transition-transform">
@@ -412,8 +449,12 @@ export const Dashboard: React.FC = () => {
             {...getProfileReferenceProps()}
             className="flex items-center gap-3 cursor-pointer bg-[rgba(0,0,0,0.2)] p-1.5 md:pr-4 rounded-full border border-[var(--color-border-line)] hover:border-[var(--color-swamp-green-light)] transition-colors shrink-0"
           >
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[var(--color-swamp-green-dark)] border border-[var(--color-swamp-green)] flex items-center justify-center text-[var(--color-swamp-green-light)] font-bold uppercase text-sm md:text-base">
-              {user.username.charAt(0)}
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[var(--color-swamp-green-dark)] border border-[var(--color-swamp-green)] flex items-center justify-center text-[var(--color-swamp-green-light)] font-bold uppercase text-sm md:text-base overflow-hidden">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                user.username.charAt(0)
+              )}
             </div>
             <span className="text-sm font-medium text-white hidden md:block">{user.username}</span>
           </div>
@@ -492,8 +533,64 @@ export const Dashboard: React.FC = () => {
       {activeTab === 'calendar' ? (
         <CalendarView 
           incomes={incomes} 
-          debts={debts} 
+          debts={remainingDebts} 
           bills={bills}
+          payments={payments}
+          onSavePayment={async (payment) => {
+            if (!user) return;
+            try {
+              if (payment.id) {
+                await fetch(`/api/payments/${payment.id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payment)
+                });
+                setPayments(payments.map(p => p.id === payment.id ? payment as Payment : p));
+              } else {
+                const newPayment = { ...payment, id: crypto.randomUUID(), userId: user.id };
+                await fetch('/api/payments', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(newPayment)
+                });
+                setPayments([...payments, newPayment as Payment]);
+              }
+            } catch (err) {
+              console.error('Failed to save payment', err);
+            }
+          }}
+          onDeletePayment={async (paymentId) => {
+            if (!user) return;
+            try {
+              await fetch(`/api/payments/${paymentId}`, {
+                method: 'DELETE'
+              });
+              setPayments(payments.filter(p => p.id !== paymentId));
+            } catch (err) {
+              console.error('Failed to delete payment', err);
+            }
+          }}
+          itemShifts={itemShifts}
+          onSaveShift={async (shift) => {
+            if (!user) return;
+            try {
+              const res = await fetch('/api/item-shifts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...shift, id: crypto.randomUUID(), userId: user.id })
+              });
+              const data = await res.json();
+              if (data.success) {
+                // Refresh shifts
+                fetch(`/api/item-shifts?userId=${user.id}`)
+                  .then(res => res.json())
+                  .then(data => setItemShifts(data))
+                  .catch(console.error);
+              }
+            } catch (err) {
+              console.error('Failed to save shift', err);
+            }
+          }}
           calendarStartDate={calendarStartDate}
           debtStartDate={debtStartDate}
           targetMonths={targetMonths}
@@ -577,7 +674,7 @@ export const Dashboard: React.FC = () => {
                       type="range" 
                       min={minMonths} max="120" 
                       value={targetMonths} 
-                      onChange={(e) => setTargetMonths(Number(e.target.value))}
+                      onChange={(e) => handleTargetMonthsChange(Number(e.target.value))}
                       className="w-full accent-[var(--color-swamp-green)]"
                     />
                     <span className="font-mono text-2xl w-16 text-right text-[var(--color-swamp-green-light)]">{targetMonths}</span>
@@ -701,6 +798,8 @@ export const Dashboard: React.FC = () => {
               
               <Reorder.Group axis="y" values={debts} onReorder={setDebts} className="flex flex-col gap-4 flex-1 overflow-y-auto pr-2 content-start">
                 {debts.map(debt => {
+                  const remainingDebt = remainingDebts.find(d => d.id === debt.id);
+                  const displayAmount = remainingDebt ? remainingDebt.amount : debt.amount;
                   const monthlyPayment = monthlyPayments.find(mp => mp.id === debt.id)?.monthlyPayment || 0;
                   return (
                   <Reorder.Item key={debt.id} value={debt} className="p-5 rounded-2xl bg-[rgba(0,0,0,0.2)] linear-border relative group hover:border-[var(--color-ash-red-dark)] transition-colors flex flex-col cursor-grab active:cursor-grabbing">
@@ -723,7 +822,7 @@ export const Dashboard: React.FC = () => {
                     <div className="flex justify-between items-end mt-auto">
                       <div>
                         <p className="text-xs text-[var(--color-text-muted)] mb-1">Остаток</p>
-                        <p className="font-mono text-xl">{formatCurrency(debt.amount)}</p>
+                        <p className="font-mono text-xl">{formatCurrency(displayAmount)}</p>
                       </div>
                       {debt.type !== 'installment' && debt.type !== 'split' && (
                         <div className="text-right">
@@ -813,7 +912,14 @@ export const Dashboard: React.FC = () => {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         user={user}
-        onUpdateUser={(username) => setUser({ ...user, username })}
+        onUpdateUser={async (username, avatarUrl) => {
+          setUser({ ...user, username, avatarUrl });
+          await fetch(`/api/users/${user.id}/avatar`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ avatarUrl })
+          });
+        }}
         onClearData={() => {
           setIncomes([]);
           setDebts([]);

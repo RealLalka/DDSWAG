@@ -80,7 +80,7 @@ export const DebtModal: React.FC<DebtModalProps> = ({ isOpen, onClose, onSave, e
 
     for (let i = 0; i < count; i++) {
       newScheduleItems.push({
-        id: Date.now().toString() + i,
+        id: crypto.randomUUID(),
         date: currentDate.toISODate() || '',
         amount: amount,
         groupId: groupId
@@ -134,7 +134,7 @@ export const DebtModal: React.FC<DebtModalProps> = ({ isOpen, onClose, onSave, e
 
   const handleAddScheduleItem = () => {
     const newItem: DebtScheduleItem = { 
-      id: Date.now().toString(), 
+      id: crypto.randomUUID(), 
       date: DateTime.now().toISODate() || '', 
       amount: 0,
       groupId: '-'
@@ -175,7 +175,7 @@ export const DebtModal: React.FC<DebtModalProps> = ({ isOpen, onClose, onSave, e
     }
     
     const debt: Debt = {
-      id: editingDebt ? editingDebt.id : Date.now().toString(),
+      id: editingDebt ? editingDebt.id : crypto.randomUUID(),
       name,
       amount: finalAmount,
       rate: Number(rate) || 0,
@@ -201,20 +201,23 @@ export const DebtModal: React.FC<DebtModalProps> = ({ isOpen, onClose, onSave, e
 
   return (
     <AnimatePresence>
-      <div 
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      >
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          exit={{ opacity: 0 }} 
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+          onClick={onClose} 
+        />
         <motion.div
-          onClick={e => e.stopPropagation()}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-3xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col"
+          className="bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-3xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col z-10"
         >
           <div className="flex justify-between items-center mb-6 shrink-0">
             <h2 className="text-xl font-medium">{editingDebt ? 'Редактировать долг' : 'Добавить долг'}</h2>
-            <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white transition-colors">
+            <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white transition-colors cursor-pointer">
               <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
             </button>
           </div>

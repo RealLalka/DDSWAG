@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRightToBracket, faUserPlus, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
+import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 import { DevilIcon } from './DevilIcon';
 import { CustomInput } from './CustomInputs';
 
 interface AuthModalProps {
-  onLogin: (user: { id: number; username: string }) => void;
+  onLogin: (user: any) => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
@@ -15,6 +16,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'OAUTH_AUTH_SUCCESS' && event.data?.user) {
+        onLogin(event.data.user);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onLogin]);
+
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/auth/google/url');
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Ошибка при инициализации Google Login');
+      }
+      
+      const authWindow = window.open(
+        data.url,
+        'oauth_popup',
+        'width=600,height=700'
+      );
+
+      if (!authWindow) {
+        setError('Пожалуйста, разрешите всплывающие окна для входа через Google.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Ошибка при инициализации Google Login');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,16 +148,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
           </button>
         </form>
 
-        <div className="mt-6 text-center relative z-10 shrink-0">
+        <div className="mt-6 flex flex-col gap-4 relative z-10 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="h-px bg-[var(--color-border-line)] flex-1" />
+            <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">или</span>
+            <div className="h-px bg-[var(--color-border-line)] flex-1" />
+          </div>
+
           <button
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setError('');
-            }}
-            className="text-sm text-[var(--color-text-muted)] hover:text-white transition-colors"
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="btn-base bg-white text-black hover:bg-gray-200 w-full disabled:opacity-50"
           >
-            {isLogin ? 'Нет аккаунта? Создать' : 'Уже есть аккаунт? Войти'}
+            <FontAwesomeIcon icon={faGoogle} className="w-5 h-5" />
+            Продолжить с Google
           </button>
+
+          <div className="text-center mt-2">
+            <button
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError('');
+              }}
+              className="text-sm text-[var(--color-text-muted)] hover:text-white transition-colors"
+            >
+              {isLogin ? 'Нет аккаунта? Создать' : 'Уже есть аккаунт? Войти'}
+            </button>
+          </div>
         </div>
         </div>
       </motion.div>

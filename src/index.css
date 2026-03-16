@@ -136,3 +136,14 @@ input:-webkit-autofill:active{
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+button, 
+[role="button"], 
+.cursor-pointer,
+[onClick] {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}

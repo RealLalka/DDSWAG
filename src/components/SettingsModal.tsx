@@ -7,21 +7,23 @@ import { CustomInput } from './CustomInputs';
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: { username: string };
-  onUpdateUser: (username: string) => void;
+  user: { username: string; avatarUrl?: string };
+  onUpdateUser: (username: string, avatarUrl: string) => void;
   onClearData: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, user, onUpdateUser, onClearData }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'data'>('profile');
   const [username, setUsername] = useState(user.username);
+  const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl || '');
+  const [avatarError, setAvatarError] = useState('');
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSaveProfile = () => {
     if (username.trim()) {
-      onUpdateUser(username.trim());
+      onUpdateUser(username.trim(), avatarUrl.trim());
       onClose();
     }
   };
@@ -50,7 +52,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, u
         >
           <div className="flex justify-between items-center mb-6 shrink-0">
             <h2 className="text-2xl font-medium font-mono">Настройки</h2>
-            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors cursor-pointer">
               <FontAwesomeIcon icon={faXmark} className="w-5 h-5 text-[var(--color-text-muted)]" />
             </button>
           </div>
@@ -81,6 +83,51 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, u
                     onChange={(e) => setUsername(e.target.value)} 
                     placeholder="Ваше имя"
                   />
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-[var(--color-text-muted)] mb-2">Аватар</label>
+                  <div className="flex gap-4 items-center">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Avatar" className="w-16 h-16 rounded-full object-cover border border-[var(--color-border-line)]" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-[rgba(0,0,0,0.2)] border border-[var(--color-border-line)] flex items-center justify-center text-[var(--color-text-muted)]">
+                        <FontAwesomeIcon icon={faUser} className="w-6 h-6" />
+                      </div>
+                    )}
+                    <div className="flex-1 flex flex-col gap-2">
+                      <CustomInput 
+                        type="text" 
+                        value={avatarUrl} 
+                        onChange={(e) => setAvatarUrl(e.target.value)} 
+                        placeholder="URL изображения (https://...)"
+                      />
+                      <label className="cursor-pointer text-xs text-[var(--color-swamp-green-light)] hover:text-white transition-colors">
+                        Или загрузите файл
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={(e) => {
+                            setAvatarError('');
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              if (file.size > 2 * 1024 * 1024) {
+                                setAvatarError('Файл слишком большой. Максимальный размер 2MB.');
+                                return;
+                              }
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                setAvatarUrl(reader.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+                      {avatarError && <p className="text-xs text-[var(--color-ash-red-light)] mt-1">{avatarError}</p>}
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="pt-4">

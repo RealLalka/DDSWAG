@@ -42,7 +42,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSav
       
       if (Array.isArray(editingIncome.dates)) {
         setPayments(editingIncome.dates.map((d, i) => ({
-          id: Date.now().toString() + i,
+          id: crypto.randomUUID(),
           date: d,
           amount: editingIncome.amount / editingIncome.dates.length,
           label: 'Выплата'
@@ -52,7 +52,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSav
       }
     } else if (isOpen) {
       setName('');
-      setPayments([{ id: Date.now().toString(), date: 10, amount: 0, label: 'Аванс' }]);
+      setPayments([{ id: crypto.randomUUID(), date: 10, amount: 0, label: 'Аванс' }]);
     }
   }, [editingIncome, isOpen]);
 
@@ -68,7 +68,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSav
   if (!isOpen) return null;
 
   const handleAddPayment = () => {
-    setPayments([...payments, { id: Date.now().toString(), date: 25, amount: 0, label: 'Зарплата' }]);
+    setPayments([...payments, { id: crypto.randomUUID(), date: 25, amount: 0, label: 'Зарплата' }]);
   };
 
   const handleRemovePayment = (id: string) => {
@@ -89,7 +89,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSav
     const config: IncomeConfig = { type: 'fixed', payments: validPayments };
 
     const income: Income = {
-      id: editingIncome ? editingIncome.id : Date.now().toString(),
+      id: editingIncome ? editingIncome.id : crypto.randomUUID(),
       name,
       amount: totalAmount,
       dates: config,
@@ -101,12 +101,19 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSav
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          exit={{ opacity: 0 }} 
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+          onClick={onClose} 
+        />
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col"
+          className="bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col z-10"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-swamp-green)] opacity-10 rounded-full blur-3xl" />
           
@@ -115,7 +122,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSav
               <FontAwesomeIcon icon={faWallet} className="w-5 h-5 text-[var(--color-swamp-green-light)]" />
               {editingIncome ? 'Редактировать доход' : 'Добавить доход'}
             </h2>
-            <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white transition-colors p-1 bg-white/5 rounded-full">
+            <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white transition-colors p-1 bg-white/5 rounded-full cursor-pointer">
               <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
             </button>
           </div>

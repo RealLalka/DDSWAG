@@ -21,7 +21,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
     onOpenChange: setIsOpen,
     placement: 'bottom-start',
     whileElementsMounted: autoUpdate,
-    middleware: [offset(4), flip(), shift({ padding: 8 })],
+    middleware: [offset(8), flip(), shift({ padding: 16 })],
   });
 
   const click = useClick(context);
@@ -90,7 +90,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="w-64 p-4 bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-2xl shadow-xl"
+                  className="w-full max-w-xs p-4 bg-[var(--color-panel)] border border-[var(--color-border-line)] rounded-2xl shadow-xl"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <button 

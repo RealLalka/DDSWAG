@@ -48,6 +48,25 @@ db.exec(`
     dueDate INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users (id)
   );
+
+  CREATE TABLE IF NOT EXISTS payments (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    item_id TEXT NOT NULL,
+    item_type TEXT NOT NULL,
+    amount REAL NOT NULL,
+    date TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+  );
+  CREATE TABLE IF NOT EXISTS item_shifts (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    item_id TEXT NOT NULL,
+    item_type TEXT NOT NULL,
+    original_date TEXT NOT NULL,
+    new_date TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+  );
 `);
 
 try {
@@ -64,6 +83,18 @@ try {
 
 try {
   db.exec('ALTER TABLE debts ADD COLUMN paymentDate INTEGER DEFAULT 1');
+} catch (e) {}
+
+try {
+  db.exec('ALTER TABLE users ADD COLUMN target_months INTEGER DEFAULT 24');
+} catch (e) {}
+
+try {
+  db.exec('ALTER TABLE users ADD COLUMN avatar_url TEXT');
+} catch (e) {}
+
+try {
+  db.exec('ALTER TABLE users ADD COLUMN google_id TEXT');
 } catch (e) {}
 
 export default db;
