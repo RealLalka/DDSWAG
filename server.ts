@@ -43,7 +43,10 @@ async function startServer() {
         calendarStartDate: null,
         debtStartDate: null,
         targetMonths: 24,
-        avatarUrl: null
+        avatarUrl: null,
+        avatarFrame: 'none',
+        googleId: null,
+        hasPassword: true
       });
     } catch (err: any) {
       if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -73,7 +76,10 @@ async function startServer() {
       calendarStartDate: user.calendar_start_date,
       debtStartDate: user.debt_start_date,
       targetMonths: user.target_months || 24,
-      avatarUrl: user.avatar_url
+      avatarUrl: user.avatar_url,
+      avatarFrame: user.avatar_frame || 'none',
+      googleId: user.google_id,
+      hasPassword: user.password_hash !== 'oauth'
     });
   });
 
@@ -98,6 +104,17 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  app.put('/api/users/:id/username', (req, res) => {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: 'Missing username' });
+    try {
+      db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, req.params.id);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to update username' });
+    }
+  });
+
   app.put('/api/users/:id/avatar', (req, res) => {
     const { avatarUrl } = req.body;
     const stmt = db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?');
@@ -110,6 +127,7 @@ async function startServer() {
       return res.status(500).json({ error: 'Google Client ID не настроен. Пожалуйста, добавьте GOOGLE_CLIENT_ID в переменные окружения.' });
     }
     
+    const { userId } = req.query;
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.headers['x-forwarded-host'] || req.get('host');
     let baseUrl = process.env.APP_URL || `${protocol}://${host}`;
@@ -124,13 +142,14 @@ async function startServer() {
       response_type: 'code',
       scope: 'email profile',
       access_type: 'offline',
-      prompt: 'consent'
+      prompt: 'consent',
+      state: userId ? `link_${userId}` : 'login'
     });
     res.json({ url: `https://accounts.google.com/o/oauth2/v2/auth?${params}` });
   });
 
   app.get('/auth/callback', async (req, res) => {
-    const { code } = req.query;
+    const { code, state } = req.query;
     // In a real app, exchange code for token. For demo, we'll mock it if no client secret.
     let userData = null;
     
@@ -174,29 +193,60 @@ async function startServer() {
     }
 
     if (userData) {
-      let user = db.prepare('SELECT * FROM users WHERE google_id = ?').get(userData.id) as any;
-      if (!user) {
-        const stmt = db.prepare('INSERT INTO users (username, password_hash, google_id, avatar_url) VALUES (?, ?, ?, ?)');
-        const info = stmt.run(userData.name || userData.email, 'oauth', userData.id, userData.picture);
-        user = { id: info.lastInsertRowid, username: userData.name || userData.email, min_budget: 15000, avatar_url: userData.picture, target_months: 24 };
-      }
+      let userPayloadStr = '';
       
-      const userPayload = JSON.stringify({
-        id: user.id,
-        username: user.username,
-        minBudget: user.min_budget || 15000,
-        calendarStartDate: user.calendar_start_date,
-        debtStartDate: user.debt_start_date,
-        targetMonths: user.target_months || 24,
-        avatarUrl: user.avatar_url || userData.picture
-      });
+      if (state && state.toString().startsWith('link_')) {
+        const userIdToLink = state.toString().split('_')[1];
+        const existingGoogleUser = db.prepare('SELECT * FROM users WHERE google_id = ?').get(userData.id) as any;
+        
+        if (existingGoogleUser && existingGoogleUser.id.toString() !== userIdToLink) {
+          res.send('Этот Google аккаунт уже привязан к другому пользователю.');
+          return;
+        }
+        
+        db.prepare('UPDATE users SET google_id = ?, avatar_url = COALESCE(avatar_url, ?) WHERE id = ?').run(userData.id, userData.picture, userIdToLink);
+        const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userIdToLink) as any;
+        
+        userPayloadStr = JSON.stringify({
+          id: user.id,
+          username: user.username,
+          minBudget: user.min_budget || 15000,
+          calendarStartDate: user.calendar_start_date,
+          debtStartDate: user.debt_start_date,
+          targetMonths: user.target_months || 24,
+          avatarUrl: user.avatar_url,
+          avatarFrame: user.avatar_frame || 'none',
+          googleId: user.google_id,
+          hasPassword: user.password_hash !== 'oauth'
+        });
+      } else {
+        let user = db.prepare('SELECT * FROM users WHERE google_id = ?').get(userData.id) as any;
+        if (!user) {
+          const stmt = db.prepare('INSERT INTO users (username, password_hash, google_id, avatar_url) VALUES (?, ?, ?, ?)');
+          const info = stmt.run(userData.name || userData.email, 'oauth', userData.id, userData.picture);
+          user = { id: info.lastInsertRowid, username: userData.name || userData.email, min_budget: 15000, avatar_url: userData.picture, target_months: 24, avatar_frame: 'none', google_id: userData.id, password_hash: 'oauth' };
+        }
+        
+        userPayloadStr = JSON.stringify({
+          id: user.id,
+          username: user.username,
+          minBudget: user.min_budget || 15000,
+          calendarStartDate: user.calendar_start_date,
+          debtStartDate: user.debt_start_date,
+          targetMonths: user.target_months || 24,
+          avatarUrl: user.avatar_url || userData.picture,
+          avatarFrame: user.avatar_frame || 'none',
+          googleId: user.google_id || userData.id,
+          hasPassword: user.password_hash !== 'oauth'
+        });
+      }
 
       res.send(`
         <html>
           <body>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', user: ${userPayload} }, '*');
+                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', user: ${userPayloadStr} }, '*');
                 window.close();
               } else {
                 window.location.href = '/';
@@ -209,6 +259,27 @@ async function startServer() {
     } else {
       res.send('Authentication failed');
     }
+  });
+
+  app.put('/api/users/:id/password', async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id) as any;
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    if (user.password_hash !== 'oauth') {
+      const match = await bcrypt.compare(oldPassword, user.password_hash);
+      if (!match) return res.status(401).json({ error: 'Неверный старый пароль' });
+    }
+    
+    const hash = await bcrypt.hash(newPassword, 12);
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.params.id);
+    res.json({ success: true });
+  });
+
+  app.put('/api/users/:id/avatar-frame', (req, res) => {
+    const { frame } = req.body;
+    db.prepare('UPDATE users SET avatar_frame = ? WHERE id = ?').run(frame, req.params.id);
+    res.json({ success: true });
   });
 
   // --- Incomes API ---

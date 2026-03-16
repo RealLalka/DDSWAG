@@ -14,7 +14,7 @@ import { IncomeModal, Income } from './IncomeModal';
 import { CalendarView } from './CalendarView';
 import { CustomDatePicker } from './CustomDatePicker';
 import { CustomNumberInput } from './CustomInputs';
-import { SettingsModal } from './SettingsModal';
+import { SettingsModal, AVATAR_FRAMES } from './SettingsModal';
 import { Payment } from './PaymentModal';
 import {
   XAxis,
@@ -27,7 +27,10 @@ import {
 } from 'recharts';
 
 export const Dashboard: React.FC = () => {
-  const [user, setUser] = useState<{ id: number; username: string; minBudget: number; calendarStartDate?: string; debtStartDate?: string; targetMonths?: number; avatarUrl?: string; } | null>(null);
+  const [user, setUser] = useState<{ id: number; username: string; minBudget: number; calendarStartDate?: string; debtStartDate?: string; targetMonths?: number; avatarUrl?: string; avatarFrame?: string; googleId?: string; } | null>(() => {
+    const saved = localStorage.getItem('user');
+    return saved ? JSON.parse(saved) : null;
+  });
   
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -46,7 +49,10 @@ export const Dashboard: React.FC = () => {
   
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [targetMonths, setTargetMonths] = useState<number>(24);
+  const [targetMonths, setTargetMonths] = useState<number>(() => {
+    const saved = localStorage.getItem('targetMonths');
+    return saved ? parseInt(saved, 10) : 24;
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar'>('dashboard');
@@ -66,6 +72,18 @@ export const Dashboard: React.FC = () => {
   const profileDismiss = useDismiss(profileContext);
   const profileRole = useRole(profileContext);
   const { getReferenceProps: getProfileReferenceProps, getFloatingProps: getProfileFloatingProps } = useInteractions([profileClick, profileDismiss, profileRole]);
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('user');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    localStorage.setItem('targetMonths', targetMonths.toString());
+  }, [targetMonths]);
 
   const fetchData = () => {
     if (user) {
@@ -448,9 +466,12 @@ export const Dashboard: React.FC = () => {
             {...getProfileReferenceProps()}
             className="flex items-center gap-3 cursor-pointer bg-[rgba(0,0,0,0.2)] p-1.5 md:pr-4 rounded-full border border-[var(--color-border-line)] hover:border-[var(--color-swamp-green-light)] transition-colors shrink-0"
           >
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[var(--color-swamp-green-dark)] border border-[var(--color-swamp-green)] flex items-center justify-center text-[var(--color-swamp-green-light)] font-bold uppercase text-sm md:text-base overflow-hidden">
+            <div className={cn(
+              "w-8 h-8 md:w-10 md:h-10 rounded-full bg-[var(--color-swamp-green-dark)] border border-[var(--color-swamp-green)] flex items-center justify-center text-[var(--color-swamp-green-light)] font-bold uppercase text-sm md:text-base overflow-hidden",
+              AVATAR_FRAMES.find(f => f.id === (user.avatarFrame || 'none'))?.class
+            )}>
               {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
               ) : (
                 user.username.charAt(0)
               )}
@@ -911,13 +932,22 @@ export const Dashboard: React.FC = () => {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         user={user}
-        onUpdateUser={async (username, avatarUrl) => {
-          setUser({ ...user, username, avatarUrl });
-          await fetch(`/api/users/${user.id}/avatar`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ avatarUrl })
-          });
+        onUpdateUser={async (updates: any) => {
+          setUser({ ...user, ...updates });
+          if (updates.avatarUrl !== undefined) {
+            await fetch(`/api/users/${user.id}/avatar`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ avatarUrl: updates.avatarUrl })
+            });
+          }
+          if (updates.username !== undefined && updates.username !== user.username) {
+            await fetch(`/api/users/${user.id}/username`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: updates.username })
+            });
+          }
         }}
         onClearData={() => {
           setIncomes([]);

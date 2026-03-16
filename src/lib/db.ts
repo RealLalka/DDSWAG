@@ -18,7 +18,13 @@ try {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
-      min_budget REAL DEFAULT 15000
+      min_budget REAL DEFAULT 15000,
+      google_id TEXT UNIQUE,
+      avatar_url TEXT,
+      avatar_frame TEXT DEFAULT 'none',
+      calendar_start_date TEXT,
+      debt_start_date TEXT,
+      target_months INTEGER DEFAULT 24
     );
 
     CREATE TABLE IF NOT EXISTS incomes (
@@ -101,6 +107,10 @@ try {
 
 try {
   db.exec('ALTER TABLE users ADD COLUMN google_id TEXT');
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN avatar_frame TEXT DEFAULT 'none'");
 } catch (e) {}
 
 export default db;
