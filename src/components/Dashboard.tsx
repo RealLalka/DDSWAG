@@ -46,6 +46,7 @@ export const Dashboard: React.FC = () => {
   
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [targetMonths, setTargetMonths] = useState<number>(24);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar'>('dashboard');
@@ -236,8 +237,6 @@ export const Dashboard: React.FC = () => {
     }
     return 120;
   }, [remainingDebts, totalIncome, minBudget, totalBills]);
-
-  const [targetMonths, setTargetMonths] = useState<number>(24);
 
   useEffect(() => {
     if (targetMonths < minMonths) {

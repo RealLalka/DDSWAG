@@ -1,6 +1,6 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import db from './src/lib/db.ts';
 
 async function startServer() {
