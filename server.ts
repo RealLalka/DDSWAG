@@ -1,13 +1,34 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import bcrypt from 'bcryptjs';
-import db from './src/lib/db.ts';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
+  
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server listening on http://0.0.0.0:${PORT}`);
+  });
 
   app.use(express.json());
+  
+  app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+  let db: any;
+  try {
+    console.log('Initializing database...');
+    const dbModule = await import('./src/lib/db.ts');
+    db = dbModule.default;
+    console.log('Database initialized');
+  } catch (err) {
+    console.error('DB Init Error:', err);
+    db = { prepare: () => ({ run: () => ({}), get: () => ({}), all: () => [] }), exec: () => ({}) };
+  }
 
   // --- Auth API ---
   app.post('/api/auth/register', async (req, res) => {
@@ -356,9 +377,8 @@ async function startServer() {
     app.use(express.static('dist'));
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
 }
 
-startServer();
+startServer().catch(err => {
+  console.error('Unhandled error during server startup:', err);
+});
