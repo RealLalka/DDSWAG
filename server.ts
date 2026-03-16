@@ -112,7 +112,10 @@ async function startServer() {
     
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.headers['x-forwarded-host'] || req.get('host');
-    const baseUrl = process.env.APP_URL || `${protocol}://${host}`;
+    let baseUrl = process.env.APP_URL || `${protocol}://${host}`;
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
     const redirectUri = `${baseUrl}/auth/callback`;
     
     const params = new URLSearchParams({
@@ -140,7 +143,14 @@ async function startServer() {
       };
     } else {
       try {
-        const redirectUri = `${req.protocol}://${req.get('host')}/auth/callback`;
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const host = req.headers['x-forwarded-host'] || req.get('host');
+        let baseUrl = process.env.APP_URL || `${protocol}://${host}`;
+        if (baseUrl.endsWith('/')) {
+          baseUrl = baseUrl.slice(0, -1);
+        }
+        const redirectUri = `${baseUrl}/auth/callback`;
+        
         const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
