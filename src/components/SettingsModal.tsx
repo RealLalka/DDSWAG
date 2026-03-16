@@ -14,12 +14,12 @@ interface SettingsModalProps {
 }
 
 export const AVATAR_FRAMES = [
-  { id: 'none', name: 'Без рамки', class: '' },
-  { id: 'red', name: 'Красная', class: 'ring-4 ring-red-500' },
-  { id: 'blue', name: 'Синяя', class: 'ring-4 ring-blue-500' },
-  { id: 'green', name: 'Зеленая', class: 'ring-4 ring-green-500' },
-  { id: 'gold', name: 'Золотая', class: 'ring-4 ring-yellow-400' },
-  { id: 'rainbow', name: 'Радужная (Анимация)', class: 'ring-4 ring-transparent bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 animate-gradient-xy p-1' }
+  { id: 'none', name: 'Без рамки', class: 'p-[2px] bg-transparent' },
+  { id: 'red', name: 'Красная', class: 'p-[2px] bg-red-500' },
+  { id: 'blue', name: 'Синяя', class: 'p-[2px] bg-blue-500' },
+  { id: 'green', name: 'Зеленая', class: 'p-[2px] bg-green-500' },
+  { id: 'gold', name: 'Золотая', class: 'p-[2px] bg-yellow-400' },
+  { id: 'rainbow', name: 'Радужная (Анимация)', class: 'p-[2px] bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 animate-gradient-xy bg-[length:400%_400%]' }
 ];
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, user, onUpdateUser, onClearData }) => {
@@ -195,11 +195,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, u
                 <div>
                   <label className="block text-sm text-[var(--color-text-muted)] mb-2">Аватар</label>
                   <div className="flex gap-4 items-center mb-4">
-                    <div className={`relative rounded-full flex items-center justify-center ${AVATAR_FRAMES.find(f => f.id === avatarFrame)?.class || ''}`}>
+                    <div className={`relative rounded-full flex items-center justify-center m-1 ${AVATAR_FRAMES.find(f => f.id === avatarFrame)?.class || ''}`}>
                       {avatarUrl ? (
-                        <img src={avatarUrl} alt="Avatar" className="w-16 h-16 rounded-full object-cover border border-[var(--color-border-line)]" />
+                        <img src={avatarUrl} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-[3px] border-[var(--color-panel)]" referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="w-16 h-16 rounded-full bg-[var(--color-panel)] border border-[var(--color-border-line)] flex items-center justify-center text-[var(--color-text-muted)]">
+                        <div className="w-16 h-16 rounded-full bg-[var(--color-panel)] border-[3px] border-[var(--color-panel)] flex items-center justify-center text-[var(--color-text-muted)]">
                           <FontAwesomeIcon icon={faUser} className="w-6 h-6" />
                         </div>
                       )}
@@ -217,19 +217,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, u
                           type="file" 
                           accept="image/*" 
                           className="hidden" 
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             setAvatarError('');
                             const file = e.target.files?.[0];
                             if (file) {
-                              if (file.size > 2 * 1024 * 1024) {
-                                setAvatarError('Файл слишком большой. Максимальный размер 2MB.');
+                              if (file.size > 5 * 1024 * 1024) {
+                                setAvatarError('Файл слишком большой. Максимальный размер 5MB.');
                                 return;
                               }
-                              const reader = new FileReader();
-                              reader.onloadend = () => {
-                                setAvatarUrl(reader.result as string);
-                              };
-                              reader.readAsDataURL(file);
+                              
+                              const formData = new FormData();
+                              formData.append('avatar', file);
+                              
+                              try {
+                                const res = await fetch(`/api/users/${user.id}/avatar-upload`, {
+                                  method: 'POST',
+                                  body: formData
+                                });
+                                const data = await res.json();
+                                if (res.ok && data.avatarUrl) {
+                                  setAvatarUrl(data.avatarUrl);
+                                  onUpdateUser({ avatarUrl: data.avatarUrl });
+                                } else {
+                                  setAvatarError(data.error || 'Ошибка загрузки');
+                                }
+                              } catch (err) {
+                                setAvatarError('Ошибка загрузки');
+                              }
                             }
                           }}
                         />
@@ -342,12 +356,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, u
                   {!isConfirmingClear ? (
                     <button 
                       onClick={() => setIsConfirmingClear(true)} 
-                      className="btn-base btn-danger w-full"
+                      className="btn-base btn-danger w-full mb-4"
                     >
                       <FontAwesomeIcon icon={faTrash} /> Очистить все данные
                     </button>
                   ) : (
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-3 mb-4">
                       <p className="text-sm text-white font-medium text-center">Вы уверены?</p>
                       <div className="flex gap-2">
                         <button 
@@ -365,6 +379,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, u
                       </div>
                     </div>
                   )}
+
+                  <p className="text-sm text-[var(--color-text-muted)] mb-4 pt-4 border-t border-rose-500/20">
+                    Удаление аккаунта приведет к полному удалению вашего профиля и всех связанных с ним данных. Это действие нельзя отменить.
+                  </p>
+
+                  <button 
+                    onClick={async () => {
+                      if (window.confirm('Вы действительно хотите удалить аккаунт? Это действие необратимо.')) {
+                        try {
+                          await fetch(`/api/users/${user.id}`, { method: 'DELETE' });
+                          onClearData();
+                          onClose();
+                          localStorage.removeItem('user');
+                          window.location.reload();
+                        } catch (err) {
+                          console.error('Failed to delete account', err);
+                        }
+                      }
+                    }} 
+                    className="btn-base bg-rose-900/50 text-rose-300 hover:bg-rose-800/50 border border-rose-500/30 w-full"
+                  >
+                    <FontAwesomeIcon icon={faTrash} /> Удалить аккаунт
+                  </button>
                 </div>
               </div>
             )}

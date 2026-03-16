@@ -50,6 +50,11 @@ export const Dashboard: React.FC = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [targetMonths, setTargetMonths] = useState<number>(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      const parsedUser = JSON.parse(savedUser);
+      if (parsedUser.targetMonths) return parsedUser.targetMonths;
+    }
     const saved = localStorage.getItem('targetMonths');
     return saved ? parseInt(saved, 10) : 24;
   });
@@ -147,15 +152,22 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const handleTargetMonthsChange = async (val: number) => {
+  const handleTargetMonthsChange = (val: number) => {
     setTargetMonths(val);
     if (user) {
-      setUser({ ...user, targetMonths: val });
-      await fetch(`/api/users/${user.id}/target-months`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetMonths: val })
-      });
+      setUser(prev => prev ? { ...prev, targetMonths: val } : null);
+      
+      // Debounce API call
+      if ((window as any).targetMonthsTimeout) {
+        clearTimeout((window as any).targetMonthsTimeout);
+      }
+      (window as any).targetMonthsTimeout = setTimeout(() => {
+        fetch(`/api/users/${user.id}/target-months`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetMonths: val })
+        }).catch(console.error);
+      }, 500);
     }
   };
 
@@ -467,13 +479,15 @@ export const Dashboard: React.FC = () => {
             className="flex items-center gap-3 cursor-pointer bg-[rgba(0,0,0,0.2)] p-1.5 md:pr-4 rounded-full border border-[var(--color-border-line)] hover:border-[var(--color-swamp-green-light)] transition-colors shrink-0"
           >
             <div className={cn(
-              "w-8 h-8 md:w-10 md:h-10 rounded-full bg-[var(--color-swamp-green-dark)] border border-[var(--color-swamp-green)] flex items-center justify-center text-[var(--color-swamp-green-light)] font-bold uppercase text-sm md:text-base overflow-hidden",
+              "w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0",
               AVATAR_FRAMES.find(f => f.id === (user.avatarFrame || 'none'))?.class
             )}>
               {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
+                <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover rounded-full border-[2px] border-[var(--color-bg-dark)]" referrerPolicy="no-referrer" />
               ) : (
-                user.username.charAt(0)
+                <div className="w-full h-full rounded-full bg-[var(--color-swamp-green-dark)] border-[2px] border-[var(--color-bg-dark)] flex items-center justify-center text-[var(--color-swamp-green-light)] font-bold uppercase text-sm md:text-base">
+                  {user.username.charAt(0)}
+                </div>
               )}
             </div>
             <span className="text-sm font-medium text-white hidden md:block">{user.username}</span>

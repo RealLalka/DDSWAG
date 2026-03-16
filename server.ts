@@ -4,15 +4,42 @@ import { createServer as createViteServer } from 'vite';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import multer from 'multer';
+import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(process.cwd(), 'uploads', 'avatars');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `${uuidv4()}${ext}`);
+  }
+});
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(express.json());
+  
+  // Serve uploaded files statically
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
   
   app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
@@ -120,6 +147,32 @@ async function startServer() {
     const stmt = db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?');
     stmt.run(avatarUrl, req.params.id);
     res.json({ success: true });
+  });
+
+  app.post('/api/users/:id/avatar-upload', upload.single('avatar'), (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const stmt = db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?');
+    stmt.run(avatarUrl, req.params.id);
+    res.json({ success: true, avatarUrl });
+  });
+
+  app.delete('/api/users/:id', (req, res) => {
+    try {
+      const userId = req.params.id;
+      db.prepare('DELETE FROM item_shifts WHERE user_id = ?').run(userId);
+      db.prepare('DELETE FROM payments WHERE user_id = ?').run(userId);
+      db.prepare('DELETE FROM bills WHERE user_id = ?').run(userId);
+      db.prepare('DELETE FROM debts WHERE user_id = ?').run(userId);
+      db.prepare('DELETE FROM incomes WHERE user_id = ?').run(userId);
+      db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Failed to delete user', err);
+      res.status(500).json({ error: 'Failed to delete user' });
+    }
   });
 
   app.get('/api/auth/google/url', (req, res) => {
