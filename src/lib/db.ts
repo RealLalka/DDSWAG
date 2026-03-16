@@ -1,11 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const dbPath = path.join(__dirname, '../../database.sqlite');
+const dbPath = path.join(process.cwd(), 'database.sqlite');
 let db: any;
 try {
   db = new Database(dbPath);
